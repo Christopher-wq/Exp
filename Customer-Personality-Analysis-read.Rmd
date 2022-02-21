@@ -1,0 +1,333 @@
+---
+title: 'Exploratory Data Analysis on Customer Personality Dataset '
+output:
+  html_document:
+    df_print: paged
+  html_notebook: default
+  always_allow_html: yes
+  pdf_document: default
+---
+
+## Packages
+```{r message=FALSE, warning=FALSE}
+library(tinytex)
+library(tidyverse)
+library(lubridate) 
+# This one is for dates
+# install.packages("DataExplorer")
+library(DataExplorer)
+library(meltr)
+# install.packages("plotly")
+library(plotly)
+library(data.table)
+# install.packages("installr") for updating R
+library(installr)
+```
+
+## The Data
+```{r}
+Data <- readr::read_delim("C:/Users/Chris/OneDrive/R project/Customer Personality Analysis/marketing_campaign.csv")
+# Option for future: use na.strings = "..": it replaces blanks with NA
+# fileENcoding = "UTF-8-BOM" R reads characters as correctly as they would appear on the raw dataset
+
+Data <- Data  %>% select(-ID, -Z_CostContact,-Response, -Z_Revenue, -Complain) %>%   filter(Income != 666666) %>%   mutate(Dt_Customer = as.Date(Dt_Customer, format = "%d-%m-%Y"))# This was added later
+str(Data)
+```
+The Customer Personality Analysis dataset holds information on basic customer attributes such as birth year, education, income as well as their spending habits relating to wine, fruits meat, fish. Data also includes whether customers made purchases with a discount, through the web or with the help of a catalogue.
+
+There are a couple of columns towards the end that I'm unclear on regarding their purpose. These are: Complain, Z_CostContact, Z_Revenue and Response. I think it is safe to remove them from the analysis. We also need to convert the date column into a date properly. 
+
+```{r}
+# Data <- Data %>% 
+#  select(-Z_CostContact, - Response, -Z_Revenue, -Complain) %>% 
+#  mutate(Dt_Customer = as.Date(Dt_Customer, format = "%d-%m-%Y")) Moved to the top
+
+```
+
+For the correlation matrix later we don't need ID or customer joining date:
+```{r}
+Data_cor <- Data %>% select_if(is.numeric)
+```
+```{r}
+str(Data)
+```
+This seems ok now. No real need to rename columns.
+```{r}
+view(Data)
+```
+
+
+### Exploratory Data Analysis
+
+```{r}
+plot_str(Data, type = "d")
+# Can choose between d for diagonal or r for radial plots
+```
+This is a nice plot for seeing the structure of the data. If you have complicated lists of lists this works nicely to see network branches.
+```{r}
+introduce(Data)
+```
+This is a quick way to see some basic information - especially the missing values that will get removed in most scenarios.
+```{r}
+plot_missing(Data)
+```
+There are some missing values in the Income column. Perhaps we will remove them for analysis relating income to other categories. Removed from the data at the start so it should show all 0's now.
+
+```{r}
+plot_histogram(Data[ , -1], nrow = 2) # -1 because we don't need ID here
+```
+```{r}
+plot_density(Data[ , -1], nrow = 2) # We don't need ID here. Note that this is useless for the discrete variables. Less useful than the histograms
+```
+Filter out the discrete variables - density isn't good for a lot of these.
+
+#### Colourful Correlation Plot
+
+A nice DIY correlation plot that I believe looks more aesthetic than most of those in packages:
+
+```{r eval=FALSE, include=FALSE}
+# Store our variable names for later use
+
+# Since it's symmetric we can remove some of the data
+corrdata <- cor(na.omit(select_if(Data_cor, is.numeric)))
+corrdata[upper.tri(corrdata, diag = TRUE)] <- NA
+corrdata <- corrdata[-1, -ncol(corrdata)] # take out the first row (no 1-1 correlations)
+corrdata
+
+x_labels <- colnames(corrdata)
+y_labels <- rownames(corrdata)
+
+# Change variable names to numeric for the grid
+colnames(corrdata) <- 1:ncol(corrdata)
+rownames(corrdata) <- nrow(corrdata):1
+
+# Melt the data into  the desired format
+plotdata <- melt(corrdata)
+plotdata
+
+# We can plot it with the code:
+fig <- plot_ly(data = plotdata, width = 500, height = 500)
+fig <- fig %>% add_trace(x = ~Var2, y = ~Var1, type = "scatter", mode = "markers", color = ~value, symbol = I("square"))
+
+# Adding size variable and scaling it. $value is the correlation value
+plotdata$size <- (abs(plotdata$value))
+scaling <- 500/ncol(corrdata)/2
+plotdata$size <- plotdata$size*scaling 
+
+# We've inflated the numbers and made them positive
+
+# Now we add size to the markers
+fig <- plot_ly(data = plotdata, width = 500, height = 500)
+fig <- fig %>% add_trace(x = ~Var2, y = ~Var1, type = "scatter", mode = "markers", color = ~value, marker = list(size = ~size, opacity = 1), symbol = I("square"))
+fig
+
+# Now some cleanup. Naming variables and removing gridlines
+
+xAx1 <- list(showgrid = FALSE, showline = FALSE, zeroline = FALSE, tickvals = colnames(corrdata), ticktext = x_labels, title = FALSE)
+
+yAx1 <- list(autoaxis = FALSE, showgrid  = FALSE, showline = FALSE, zeroline = FALSE, tickvals = rownames(corrdata), ticktext = y_labels, title = FALSE)
+
+fig <- plot_ly(data = plotdata, width = 500, height = 500)
+fig <- fig %>% add_trace(x = ~Var2, y = ~Var1, type = "scatter", mode = "markers", color = ~value, marker = list(size = ~size, opacity = 1), symbol = I("square"))
+
+fig <- fig %>% layout(xaxis = xAx1, yaxis = yAx1)
+
+# Since it's symmetric we can remove some of the data
+```
+
+```{r}
+# FUll code
+
+# library(plotly)
+# library(data.table)
+
+# For the correlation plot, we only want the numeric columns. 
+# Here is one way:
+#nums <- unlist(lapply(Data_cor), is.numeric)
+#Data_cor[ ,nums]
+
+# This one is cool:
+#Data_cor[ ,map_lgl(Data_cor, is.numeric)]
+
+# So is this:
+#select_if(Data_cor, is.numeric)
+
+# and...:
+#Data_cor %>% select(where(is.numeric))
+
+
+# Data_cor is the dataset (not correlation matrix) you want to use
+corrdata <- cor(na.omit(select_if(Data_cor, is.numeric)))
+corrdata[upper.tri(corrdata, diag = TRUE)] <- NA
+corrdata <- corrdata[-1, -ncol(corrdata)] # take out the first row (no 1-1 correlations)
+
+# Storing variable names for later use
+x_labels <- colnames(corrdata)
+y_labels <- rownames(corrdata)
+
+# Change variable names to numeric for the grid
+colnames(corrdata) <- 1:ncol(corrdata)
+rownames(corrdata) <- nrow(corrdata):1
+
+# Melt the data into  the desired format
+plotdata <- melt(corrdata)
+
+# Adding size variable and scaling it. $value is the correlation value
+plotdata$size <- (abs(plotdata$value))
+scaling <- 500/ncol(corrdata)/2
+plotdata$size <- plotdata$size*scaling 
+
+# Setting x and y ranges for the chart
+# We used unit values for initial grid, so shift by 0.5 to create gridlines
+xrange <- c(0.5, length(x_labels) + 0.5)
+yrange <- c(0.5, length(y_labels) + 0.5)
+
+# Setting the gridlines
+x_grid <- seq(1.5, length(x_labels) - 0.5, 1)
+y_grid <- seq(1.5, length(x_labels) - 0.5, 1)
+
+# Now some cleanup. Naming variables and removing gridlines
+
+xAx1 <- list(showgrid = FALSE, showline = FALSE, zeroline = FALSE, tickvals = colnames(corrdata), ticktext = x_labels, title = FALSE)
+
+xAx2 <- list(showgrid = FALSE, showline = FALSE, zeroline = FALSE, overlaying = "x", showticklabels = FALSE, range = xrange, tickvals = x_grid)
+
+yAx1 <- list(autoaxis = FALSE, showgrid  = FALSE, showline = FALSE, zeroline = FALSE, tickvals = rownames(corrdata), ticktext = y_labels, title = FALSE)
+
+yAx2 <- list(showgrid = TRUE, showline = FALSE, zeroline = FALSE, overlaying = "y", showticklabels = FALSE, range = yrange, tickvals = y_grid)
+
+fig <- plot_ly(data = plotdata, width = 500, height = 500)
+
+fig <- fig %>% add_trace(x = ~Var2, y = ~Var1, type = "scatter", mode = "markers",
+                        color = ~value,
+                        marker = list(size = ~size, opacity = 1),
+                        symbol = I("square"),
+                        text = ~value,
+                        hovertemplate = "%{text:.2f} <extra></extra>",
+                        xaxis = "x1",
+                        yaxis = "y1")
+
+fig <- fig %>% add_trace(x = ~Var2, y = ~Var1, type = "scatter", mode = "markers",
+                        opacity = 0,
+                        showlegend = FALSE,
+                        xaxis = "x2",
+                        yaxis = "y2",
+                        hoverinfo = "none")
+
+fig <- fig %>% layout(xaxis = xAx1,
+                     yaxis = yAx1, 
+                     xaxis2 = xAx2,
+                     yaxis2 = yAx2,
+                     plot_bgcolor = "rgba(0,0,0,0)",
+                     paper_bgcolor = "rgba(0, 0, 0, 0.03)")
+
+fig <- fig %>% colorbar(title = "", limits = c(-1,1), x = 1.1, y = 0.75)
+```
+```{r}
+fig
+```
+Note to self: Fill in or remove the NA's otherwise you'll get an NA in your correlation matrix. Some interesting relationships for income are that the number of web visits  and number of kids at home is negatively correlated to income. Perhaps consumers who are wealthier and can afford the extra delivery fees are ordering online. There are positive relations to the amount of wines, fruits, meat products, sweets, catalogue, and store purchases, which intuitively makes sense.
+
+
+### Bar Chart
+
+```{r}
+plot_bar(Data) # Note that this ignores columns with > 50 categories. Such as the date column and income.
+```
+
+It appears the number of people using coupons is around 200 per campaign, so a little less than 10% of persons recorded. These however are quite ugly so I'll try make something nicer using ggplot directly.
+
+```{r}
+Data %>% 
+  group_by(Marital_Status) %>% 
+  summarize(Income = mean(Income, na.rm = TRUE)) %>% 
+  ggplot(aes(x = reorder(Marital_Status, Income), y = Income)) +
+  geom_bar(stat = "identity", aes(fill = Income)) +
+  coord_flip() +
+  theme_grey() +
+  scale_fill_gradient(name = "Income Level")
+
+# lots of colour options I could do here, but blue looks aight
+# reorder so it goes from high to low
+```
+I suspect that YOLO, Alone, Absurd are answers given by providing "Other" responses from the survey. They should be removed from the plot and further analysis.
+```{r}
+Data %>% 
+  filter(!(Marital_Status == "Alone" | Marital_Status == "YOLO" | Marital_Status == "Absurd")) %>% 
+  group_by(Marital_Status) %>% 
+  summarize(Income = mean(Income, na.rm = TRUE)) %>% 
+  ggplot(aes(x = reorder(Marital_Status, Income), y = Income)) +
+  geom_bar(stat = "identity", aes(fill = Income)) +
+  coord_flip() +
+  theme_grey() +
+  scale_fill_gradient(name = "Income Level") +
+  labs(title = "Average Income for Customers based on Marital Status", x = "Marital Status", y = "Income")
+```
+### Violin Plot
+
+```{r}
+plot_scatterplot(Data_cor, by = "Income")
+```
+
+There is one data point that is unusally high for income. Let's investigate it:
+```{r}
+Data %>% slice_max(Income, n = 10)
+
+Data <- Data %>% 
+  filter(Income != 666666)
+```
+The largest number is 666,666! Seeing it is such a big outlier and how it's entered removing it from further analysis 
+
+```{r}
+Data <- Data %>% 
+  filter(Income != 666666)
+```
+
+Let's have a look at the scatterplots now:
+```{r}
+plot_scatterplot(Data, by = "Income")
+```
+There seem to be a couple of outliers who earn very high income, but do not purchase much of anything. Otherwise there seems to be a (expected) linear increase between number of store purchases and income.
+
+Honestly these scatterplots are a bit ugly so let's make something nicer: a violin plot.
+
+```{r}
+# install.packages("ggbeeswarm")
+library(ggbeeswarm)
+library(ggpubr)
+Data %>% 
+  filter(!(Marital_Status == "Alone" | Marital_Status == "YOLO" | Marital_Status == "Absurd")) %>% 
+  ggplot(aes(x = Marital_Status, y = Income, fill = Marital_Status)) +
+  scale_fill_viridis_d(option = "D") +
+  geom_violin(alpha = 0.5, position = position_dodge(width = 0.75), size = 1, colour = NA) +
+  geom_boxplot(notch = TRUE, outlier.size = -1, colour = "black", lwd = 1, alpha = 0.7, show.legend = F) + 
+  geom_point(shape = 21, size = 1, position = position_jitterdodge(), colour="black",alpha=1) +
+  theme_pubr() + # moves legend to top and removes some axis lines. This has to be used early
+  ggbeeswarm::geom_quasirandom(shape = 21, size = 1, dodge.width = 0.75, colour = "black", alpha = 0.5, show.legend = F) +
+  theme_minimal() +
+  ylab(c("Income of Customer")) +
+  xlab(c("Marital Status of Customer")) + 
+
+  theme(panel.border = element_rect(colour = "gray", fill = NA, size = 2),
+        axis.line = element_line(colour = "black", size = 1),
+        axis.ticks = element_line(colour = "black"),
+        axis.text = element_text(colour = "black"),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)
+        ) +
+  font("xylab", size = 15) +
+  font("xy", size = 15) +
+  font("xy.text", size =  15) +
+  font("legend.text", size = 15) +
+  rremove("legend.title") +# removes Marital_status on legend
+  guides(fill = guide_legend(override.aes = list(alpha = 1, colour = "black")))  # Choose any colour you want
+ 
+```
+
+
+
+
+```{r}
+plot_histogram(Data_cor,nrow = 2, ncol = 2)
+# Have some sort of matrix for these because otherwise it is too messy
+```
+
