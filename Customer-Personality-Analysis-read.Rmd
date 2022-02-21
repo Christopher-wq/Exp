@@ -27,7 +27,7 @@ Data <- readr::read_delim("C:/Users/Chris/OneDrive/R project/Customer Personalit
 Data <- Data  %>% select(-ID, -Z_CostContact,-Response, -Z_Revenue, -Complain) %>%   filter(Income != 666666) %>%   mutate(Dt_Customer = as.Date(Dt_Customer, format = "%d-%m-%Y"))# This was added later
 str(Data)
 ```
-The Customer Personality Analysis dataset holds information on basic customer attributes such as birth year, education, income as well as their spending habits relating to wine, fruits meat, fish. Data also includes whether customers made purchases with a discount, through the web or with the help of a catalogue.
+The Customer Personality Analysis dataset holds information on basic customer attributes such as birth year, education, income as well as their spending habits relating to wine, fruits meat, fish. Data also includes whether customers made purchases with a discount, through the web or with the help of a catalogue
 
 There are a couple of columns towards the end that I'm unclear on regarding their purpose. These are: Complain, Z_CostContact, Z_Revenue and Response. I think it is safe to remove them from the analysis. We also need to convert the date column into a date properly. 
 
@@ -270,7 +270,7 @@ Data %>% slice_max(Income, n = 10)
 Data <- Data %>% 
   filter(Income != 666666)
 ```
-The largest number is 666,666! Seeing it is such a big outlier and how it's entered removing it from further analysis 
+The largest number is 666,666! Seeing it is such a big outlier and how it's entered removing it from further analysis. 
 
 ```{r}
 Data <- Data %>% 
