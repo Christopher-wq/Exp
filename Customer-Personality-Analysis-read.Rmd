@@ -1,11 +1,10 @@
 ---
 title: 'Exploratory Data Analysis on Customer Personality Dataset '
-output:
-  html_document:
-    df_print: paged
-  html_notebook: default
-  always_allow_html: yes
-  pdf_document: default
+knit: (function(input_file, encoding) {
+  out_dir <- 'docs';
+  rmarkdown::render(input_file,
+  encoding=encoding,
+   output_file=file.path(dirname(input_file), out_dir, 'index.html'))})
 ---
 
 ## Packages
