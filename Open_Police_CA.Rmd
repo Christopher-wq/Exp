@@ -1,0 +1,454 @@
+---
+title: "Are Police Biased Against Black Persons"
+knit: (function(input_file, encoding) {
+  out_dir <- 'docs';
+  rmarkdown::render(input_file,
+  encoding=encoding,
+  output_file=file.path(dirname(input_file), out_dir, 'index.html'))})
+---
+
+
+## Packages
+```{r}
+library(tidyverse)
+library(RSQLite)
+library(dbplyr)
+library(readr)
+library(DBI)
+library(devtools)
+library(inborutils) # for large files
+library(rio)
+library(knitr)
+library(broom)
+```
+## Reading the Data
+```{r}
+# shouldn't need this after writing to SQLite db
+# Ideas for larger DB in csv: bigmatrix package
+# dat <- readRDS("C:/Users/Chris/OneDrive/R project/Open Policing/yg821jf8611_ca_statewide_2020_04_01.rds")
+```
+This is my first time encountering a large dataset (3 million rows). After much stumbling in the dark and many articles I've linked the file to a SQLite database, made an object that is a subset of the file (20,000 rows) for initial analysis, then saved it as an RDS object that isn't so big.
+
+```{r}
+# Ok SQLite does not have a storage class for dates or times, but it seems reasonably fast
+library(dplyr)
+#The code below should only need to be done once:
+
+
+#file_name <- "California_Policing"
+# sqldb <- dbConnect(SQLite(), dbname = file_name)
+# Writing
+# dbWriteTable(sqldb, name = "Calfornia_Statewide_Policing", dat, row.names = FALSE, overwrite = TRUE, append = FALSE, field.types = NULL)
+
+# Reading, only need to do once. Taking the first 20,000 rows.
+#df <- tbl(sqldb, "Calfornia_Statewide_Policing") %>% 
+#  select(-date, -raw_row_number) %>% 
+#  filter(row_number() %in% c(1:20000)) %>% 
+#  collect()
+# saving it as a RDS file for future use
+# saveRDS(df,"C:/Users/Chris/OneDrive/R project/Open Policing/Open Policing/df.rds")
+# Ok this is our regular working object for now: 20,000 rows out of 3 million to work with 
+df <- readRDS("C:/Users/Chris/OneDrive/R project/Open Policing/Open Policing/df.rds")
+# dbBegin(db) begins a transaction
+# dbRollback(db) roll back reverts to original state
+# dbCommit(db) 'commits' the data
+```
+
+
+
+```{r}
+# Tidbit for future use
+#The code below is an example for if you need to copy data over into a database:
+#copy_to(con, nycflights13::flights, "flights",
+#  temporary = FALSE, 
+#  indexes = list(
+#    c("year", "month", "day"), 
+#    "carrier", 
+#    "tailnum",
+#    "dest"
+#  )
+#)
+```
+
+
+### Exporatory Analysis
+
+```{r}
+library(DataExplorer)
+```
+Going to use glimpse on the data to get a look at the data. Glimpse reveals various location, vehicle, warning, and race information. Our variables are mostly categorical, with a lot of NA's that I might want to replace with 0's.
+```{r}
+glimpse(df)
+```
+
+
+
+```{r}
+# This is unused but it's nice to know the way to find date range
+#dat %>% 
+#  select(date) %>% 
+#  summarise(date_range = max(date) - min(date))
+```
+
+
+```{r}
+plot_str(df)
+```
+I'm not sure how nice this graph looks to be honest - will probably delete.
+
+```{r}
+introduce(df)
+```
+Introduce is very useful, it's telling me that there are a lot of missing values. The memory usage is in byes which is 2.5MB. Perhaps I could select more than 20,000 rows.
+
+```{r}
+plot_missing(df)
+```
+Whilst the NA's in district, county_name and search_person seem to be genuine missing data, the other variables seem to be using NA as a geuine outcome. Let's take a look at these columns:
+```{r}
+df %>% select(outcome, warning_issued, citation_issued, arrest_made, search_basis, contraband_found, frisk_performed) %>% 
+  distinct()
+```
+The frisk_performed column has only NA's and 1's. We can treat the NA's as 0 i.e no frisk performed. arrest_made, citation_issued, warning_issued, outcome tend to have NA's together for a row. I believe it is a reasonable assumption that nothing occured during these pull overs. Therefore we can replace these NA's with 0's. The search_basis is giving us 'other' or NA, so we should probably remove this column. Search_person can also replace NA's with 0's.
+
+
+```{r}
+# Modifying all these NA entries:
+df <- df %>% 
+  replace_na(list(outcome = "nothing", warning_issued = 0, arrest_made = 0, citation_issued = 0, warning_issued = 0, contraband_found = 0, frisk_performed = 0, search_conducted = 0 )) %>% 
+  select(-search_basis)
+df <- df %>% replace_na(list(search_person = 0))
+```
+
+```{r}
+plot_missing(df)
+```
+The district and county_name entries with NA entries can be treated as unusable data, we can remove them.
+```{r}
+df <- df %>% 
+  na.omit()
+```
+```{r}
+plot_missing(df)
+```
+And we're done cleaning the NA!
+
+### Correlation plot
+```{r}
+library(plotly)
+library(data.table)
+```
+We want the numeric data only for the correlation matrix, but first we need to turn some categorical variables into numeric:
+
+```{r}
+Indtest <- df %>% 
+  group_by(subject_race,outcome) %>% 
+  summarise(n = n()) %>% 
+  spread(outcome, n)
+Indtest
+```
+```{r}
+df %>% 
+  group_by(subject_race,outcome) %>%  summarise(n = n()) %>%  mutate(chisq_pval = chisq.test(n)$p.value)
+```
+```{r}
+df %>% distinct(subject_race)
+# In the order of: asian/islander, black, hispanic, other, white
+demo <- c(0.1452+0.0036, 0.0551, 0.3929, 0.0368, 0.3664)
+# Numbers are taken from https://en.wikipedia.org/wiki/Demographics_of_California#/media/File:Ethic_California_Organized_Pie.png. The other category I obtained from 1 - sum(demo).
+```
+
+### Categorical Data Analysis
+
+#### Visualising the covariation between two categorical variables
+
+```{r}
+ggplot(data = df) +
+  geom_count(mapping = aes(x = subject_race, y = outcome, color = ..n.., size = ..n..)) +
+  scale_size_area() +
+  scale_size_continuous(range = c(1,10)) +
+  ggtitle("Covariation Between Outcome and Race") +
+  labs(x ="Race of Subject", y = "Outcome") +
+  guides(color = "legend")
+```
+While this is not the most informative graph, it is interesting to note that quite few direct arrests. Most of the outcomes are summons or nothing. As one can expect, the circles are largest for the hispanic and white groups - the two groups with the largest samples. Let's do a proportion graph:
+
+```{r}
+ggplot(data = df) +
+  geom_count(mapping = aes(x = subject_race, y = outcome, color = ..prop.., size = ..prop.., group = 1)) +
+  scale_size_area() +
+  scale_size_continuous(range = c(1,10)) +
+  ggtitle("Covariation Between Outcome and Race") +
+  labs(x ="Race of Subject", y = "Outcome") +
+  guides(color = "legend")
+```
+Show's the same stuff, but it's nice to know it's easy to go between the two. We may also be interested in a heatmap version:
+
+```{r}
+df %>% 
+  count(subject_race, outcome) %>% 
+ggplot(aes(x = subject_race, y = outcome)) +
+  geom_tile(aes(fill = n))
+```
+```{r}
+library(hrbrthemes)
+library(seriation)
+nrow(unique(df %>% count(subject_race,outcome)))
+# 25
+colours <- colorRampPalette(c("blue", "green", "red"))(25)
+df %>% 
+  count(subject_race, outcome) %>% 
+ggplot(aes(x = subject_race, y = outcome)) +
+  geom_tile(aes(fill = n)) +
+  scale_fill_distiller(palette = "RdPu") 
+#  theme_ipsum() moves axis labels to the side
+#  Other options
+#  scale_fill_gradient(low = "White", high = "blue")
+#
+ 
+#  scale_fill_brewer(palette = "PRGn") # scale_fill_brewer requires factor for fill. Ok it's limited to 11 different facotrs this is better for something that is discrete
+```
+Same information is displayed but it's definitely a more visually engaging method. The larger numbers of summons +hispanic/white really pop out.
+#### Test of single proportion
+```{r}
+df %>% 
+  group_by(subject_race) %>% 
+  summarise(n = n()) %>% 
+  mutate(rsum = sum(n))
+
+```
+We can see that 1631 out of 19938 individuals pulled over were black. Wikipedia states that 5.51% of the population in CA is of black race. We can test the hypothesis that
+*$H_0:$ The proportion of tested black race being 0.0551 is true
+*$H_1:$ The proportion of tested black race being 0.0551 is not true
+```{r}
+prop.test(1631, 19938, 0.0551, conf.level = 0.95)
+```
+The extremely low p-vale suggests we reject the null hypothesis. The estimated proportion is 0.081 with a 95% confidence interval (0.078, 0.085). This suggests that there is some bias towards selecting black drivers to be pulled over.
+
+
+```{r}
+# library(broom)
+df_chisq <- df %>% 
+  group_by(subject_race,outcome) %>%  # the variables you want on the conteingency table
+  summarise(n = n()) %>% # need the totals
+  mutate(proportion = n/sum(n)) %>%
+  select(-proportion) %>% # Oh you definitely need to get rid of proportion here so it spreads properly
+  spread(outcome, n) %>%  # contingency table obtained! Also got proportions...and then got rid of them should make them separate
+  ungroup() %>% # select will not remove in a grouped tibble
+  select(-1) %>% 
+  chisq.test # %>% 
+  glance()
+df_chisq
+```
+Testing of association between subject_race and outcome. The p-value is less than 0.05 so we reject the null hypothesis of no association and conclude that there is a association between the row variables (race) and column variables (outcome).
+Let's have a look at the expected counts:
+```{r}
+round(as_tibble(df_chisq$expected),0)
+```
+Compare it to the actual counts in data:
+```{r}
+df %>% 
+  group_by(subject_race,outcome) %>%  # the variables you want on the conteingency table
+  summarise(n = n()) %>% # need the totals
+  mutate(proportion = n/sum(n)) %>%
+  select(-proportion) %>% # Oh you definitely need to get rid of proportion here so it spreads properly
+  spread(outcome, n) %>%  # contingency table obtained! Also got proportions...and then got rid of them should make them separate
+  ungroup()
+```
+
+
+And the most contributing cells to the total chi-square score:
+```{r}
+subject_race <- c("asian/pacific islander", "black", "hispanic", "other", "white")
+chisqres <- as_tibble(df_chisq$residuals) %>% add_column(subject_race, .before = 1)
+chisqres
+```
+The cells with the highest absolute standardized residuals contribute the most to the total chi-square score. Let's visualise this:
+```{r}
+ggplot(data = melt(chisqres), aes(x = subject_race,y = variable )) +
+  geom_raster(aes(fill = value)) +
+  scale_fill_gradient(low = "green", high = "red")
+```
+It can be seen that the column black is strongly associated with summons/arrest/warning but not strongly associated with nothing and citation.
+
+### Classification models
+
+```{r}
+model_df <- df %>% 
+  filter(raw_search_basis == "Probable Cause (positive)" | raw_search_basis == "Probable Cause (negative)") %>% 
+  mutate(across(where(is_character), as_factor)) %>% 
+  select(subject_race, subject_sex, outcome, raw_search_basis, search_conducted) 
+set.seed(42) 
+rows <- sample(nrow(model_df)) # 11970 rows
+# We'll use the first 8000 randomised entries for the model
+train <- model_df[1:8000, ]
+test <- model_df[8001:11970, ]
+# And the rest for testing
+model <- glm(raw_search_basis ~ subject_race, family = binomial(link = "logit"), data = train)
+summary(model)
+
+
+## T-test: Population Demographic Compared with Police Testing 
+
+#We want to compare the proportion of black policing incidents to the population proportion.
+```
+We now have a model depicting the relationship between a search being positive or negative and the race of the person being pulled over. The p-values are interpreted as whether there is a difference between the log-odds of the outcome between the intercept and the explanatory variable. All of the predictors are significant using p < 0.1 as the criteria but if we use p < 0.05 which is more standard then the model would reject subject_raceblack as being useful in the model.
+
+Let's quickly see how R is dummy coding the variables:
+```{r}
+contrasts(model_df$raw_search_basis)
+```
+Probable cause (positive) is coded as 0 while probable cause (negative) is coded as 1. We take exponential of the estimates for easier interpretation. Some of the notable interptations are:
+
+* An intercept of  -0.50813  implies there is a $exp(-0.50813) = 0.60$ probability that the pull-over for a hispanic is a false alarm
+* subject_raceblack estimate of 0.13792 means being black increases the log odds by 0.13792.   being black has $exp(0.13792) = 1.148$ odds of being a negative false alarm than hispanics (the reference or intercept category)
+* All other groups have negative estimates and so they are more likely to be Probable Cause(positive) than hispanics
+  - White has an estimate of  -0.33708, and so $exp(-0.33708) = 0.714$ implies the average white has a $0.6*0.714= 0.42$ chance of being a Probable Cause (negative). Which means pullovers have more than a 50% chance of being correct
+  - Asian/Pacific Islander has an estimate of -0.49, and so $exp(-0.49) = 0.61$ implies the average asian/pacific islander has a $0.6*0.61 = 0.366$ chance of being a Probable Cause (negative). Which means pullovers have a 36% chance of being a Probable Cause (negative). I.e most of the pullovers due to suspicion were justified
+
+```{r}
+# Showing this in quick view
+exp(coef(model))
+```
+
+```{r}
+ggplot(model_df, aes(raw_search_basis, fill = subject_race)) +
+  geom_bar(position = "fill")
+```
+This makes sense when we look at the plot above, proportionally most of the false alarms 
+
+Now lets see the classification rate when we test the predictive ability of the model.
+```{r}
+test1 <- test %>% select(1,4)
+probabilities <-  predict(model, newdata = test1, type = "response")
+predicted.class <- ifelse(probabilities > 0.5, "Probable Cause (negative)", "Probable Cause (positive)")
+```
+
+```{r}
+model_dfp <- df %>% 
+  filter(raw_search_basis == "Probable Cause (positive)" & subject_race != "other") %>% 
+  mutate(across(where(is_character), as_factor)) %>% 
+  select(subject_race, subject_sex, outcome, raw_search_basis, search_conducted) 
+model_dfn <- df %>% 
+  filter(raw_search_basis == "Probable Cause (negative)" & subject_race != "other") %>% 
+  mutate(across(where(is_character), as_factor)) %>% 
+  select(subject_race, subject_sex, outcome, raw_search_basis, search_conducted) 
+set.seed(222)
+indexp <- sample(seq_len(nrow(model_dfp)), size = 2000) 
+indexn <- sample(seq_len(nrow(model_dfn)), size = 2000) 
+train2 <- bind_rows(model_dfp[indexp,],model_dfn[indexn,])
+test2 <- bind_rows(model_dfp[-indexp,],model_dfn[-indexn,])
+model2 <- glm(raw_search_basis ~ subject_race, data = train2, family = binomial)
+prob <- model2 %>% predict(test2, type = "response")
+predicted.class <- ifelse(prob > 0.5, "Probable Cause (negative)", "Probable Cause(positive)")
+# mean(predicted.class == test2$raw_search_basis)  something is going wrong here...and I can't figure it out my brain hurts
+table(predicted.class,test2$raw_search_basis) # But this seems ok
+```
+The table shows 3353 correct positive and 817 correct negative predictions. This means the model has $(3353+817)/(3353+817+882+2069) = 58.5%$ chance of predicting correctly.
+
+
+## Poisson Regression
+
+We are interested in whether there is a bias against persons of black race when it comes to vehicle policing in the "California Statewide" category. One of the questions we can ask is: is the proportion of black persons cases different compared to those of other races?
+```{r}
+# Poisson regression
+# library(MASS)
+df %>% 
+  group_by(subject_race,outcome) %>%  
+  summarise(n = n())
+p<- df %>% 
+  group_by(subject_race,outcome) %>%  
+  summarise(n = n()) 
+
+
+glm1 <- glm(n ~ subject_race + outcome, data = p, family = "poisson")
+summary(glm1)
+# checking for overdispersion
+# library(AER)
+AER::dispersiontest(glm1, trafo = 1)
+# Based on: https://stats.stackexchange.com/questions/66586/is-there-a-test-to-determine-whether-glm-overdispersion-is-significant
+
+
+```
+We need to meet Poisson regression assumptions. Variable is a count: yes. The events must be independent - we can assume one person getting stopped does not make another person getting stopped more likely. 
+
+After obtaining the model (glm1), the summary shows that a lot of variables are significant (excluding raceother which is acceptable). We then decide to calculate the p-value for the deviance goodness of fit test:
+```{r}
+pchisq(glm1$deviance, df = glm1$df.residual, lower.tail = FALSE)
+```
+
+The null hypothesis is that glm1 is correctly specified, and this tiny p-value suggests that we reject the hypothesis. So this model fits badly.
+
+```{r}
+Data_cor <- df[ ,map_lgl(df, is.numeric)]
+
+# Data_cor is the dataset (not correlation matrix) you want to use
+corrdata <- cor(na.omit(select_if(Data_cor, is.numeric)))
+corrdata[upper.tri(corrdata, diag = TRUE)] <- NA
+corrdata <- corrdata[-1, -ncol(corrdata)] # take out the first row (no 1-1 correlations)
+
+# Storing variable names for later use
+x_labels <- colnames(corrdata)
+y_labels <- rownames(corrdata)
+
+# Change variable names to numeric for the grid
+colnames(corrdata) <- 1:ncol(corrdata)
+rownames(corrdata) <- nrow(corrdata):1
+
+# Melt the data into  the desired format
+plotdata <- melt(corrdata)
+
+# Adding size variable and scaling it. $value is the correlation value
+plotdata$size <- (abs(plotdata$value))
+scaling <- 500/ncol(corrdata)/2
+plotdata$size <- plotdata$size*scaling 
+
+# Setting x and y ranges for the chart
+# We used unit values for initial grid, so shift by 0.5 to create gridlines
+xrange <- c(0.5, length(x_labels) + 0.5)
+yrange <- c(0.5, length(y_labels) + 0.5)
+
+# Setting the gridlines
+x_grid <- seq(1.5, length(x_labels) - 0.5, 1)
+y_grid <- seq(1.5, length(x_labels) - 0.5, 1)
+
+# Now some cleanup. Naming variables and removing gridlines
+
+xAx1 <- list(showgrid = FALSE, showline = FALSE, zeroline = FALSE, tickvals = colnames(corrdata), ticktext = x_labels, title = FALSE)
+
+xAx2 <- list(showgrid = FALSE, showline = FALSE, zeroline = FALSE, overlaying = "x", showticklabels = FALSE, range = xrange, tickvals = x_grid)
+
+yAx1 <- list(autoaxis = FALSE, showgrid  = FALSE, showline = FALSE, zeroline = FALSE, tickvals = rownames(corrdata), ticktext = y_labels, title = FALSE)
+
+yAx2 <- list(showgrid = TRUE, showline = FALSE, zeroline = FALSE, overlaying = "y", showticklabels = FALSE, range = yrange, tickvals = y_grid)
+
+fig <- plot_ly(data = plotdata, width = 500, height = 500)
+
+fig <- fig %>% add_trace(x = ~Var2, y = ~Var1, type = "scatter", mode = "markers",
+                        color = ~value,
+                        marker = list(size = ~size, opacity = 1),
+                        symbol = I("square"),
+                        text = ~value,
+                        hovertemplate = "%{text:.2f} <extra></extra>",
+                        xaxis = "x1",
+                        yaxis = "y1")
+
+fig <- fig %>% add_trace(x = ~Var2, y = ~Var1, type = "scatter", mode = "markers",
+                        opacity = 0,
+                        showlegend = FALSE,
+                        xaxis = "x2",
+                        yaxis = "y2",
+                        hoverinfo = "none")
+
+fig <- fig %>% layout(xaxis = xAx1,
+                     yaxis = yAx1, 
+                     xaxis2 = xAx2,
+                     yaxis2 = yAx2,
+                     plot_bgcolor = "rgba(0,0,0,0)",
+                     paper_bgcolor = "rgba(0, 0, 0, 0.03)")
+
+fig <- fig %>% colorbar(title = "", limits = c(-1,1), x = 1.1, y = 0.75)
+```
+```{r}
+fig
+```
