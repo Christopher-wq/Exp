@@ -7,6 +7,8 @@ navbar:
     href: index.html
   - text: "Customer Personality Data"
     href: Customer-Personality-Analysis-read.html
+  - text: "Open Policing Analysis"
+    href: Open_Police_CA.html
 output:
   html_document:
     theme: cosmo
