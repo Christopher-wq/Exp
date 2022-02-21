@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+
+
+
+<title>Are Police Biased Against Black Persons</title>
+
+<script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="site_libs/bootstrap-3.3.5/css/cosmo.min.css" rel="stylesheet" />
+<script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<style>h1 {font-size: 34px;}
+       h1.title {font-size: 38px;}
+       h2 {font-size: 30px;}
+       h3 {font-size: 24px;}
+       h4 {font-size: 18px;}
+       h5 {font-size: 16px;}
+       h6 {font-size: 12px;}
+       code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
+       pre:not([class]) { background-color: white }</style>
+<script src="site_libs/navigation-1.1/tabsets.js"></script>
+<link href="site_libs/highlightjs-9.12.0/default.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+<script src="site_libs/htmlwidgets-1.5.4/htmlwidgets.js"></script>
+<script src="site_libs/plotly-binding-4.9.4.1/plotly.js"></script>
+<script src="site_libs/typedarray-0.1/typedarray.min.js"></script>
+<link href="site_libs/crosstalk-1.1.1/css/crosstalk.css" rel="stylesheet" />
+<script src="site_libs/crosstalk-1.1.1/js/crosstalk.min.js"></script>
+<link href="site_libs/plotly-htmlwidgets-css-1.57.1/plotly-htmlwidgets.css" rel="stylesheet" />
+<script src="site_libs/plotly-main-1.57.1/plotly-latest.min.js"></script>
+
+<style type="text/css">
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
+
+<style type="text/css">code{white-space: pre;}</style>
+<script type="text/javascript">
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
+}
+</script>
+
+
+
+
+
+
+
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+img {
+  max-width:100%;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+.html-widget {
+  margin-bottom: 20px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+summary {
+  display: list-item;
+}
+pre code {
+  padding: 0;
+}
+</style>
+
+
+<style type="text/css">
+.dropdown-submenu {
+  position: relative;
+}
+.dropdown-submenu>.dropdown-menu {
+  top: 0;
+  left: 100%;
+  margin-top: -6px;
+  margin-left: -1px;
+  border-radius: 0 6px 6px 6px;
+}
+.dropdown-submenu:hover>.dropdown-menu {
+  display: block;
+}
+.dropdown-submenu>a:after {
+  display: block;
+  content: " ";
+  float: right;
+  width: 0;
+  height: 0;
+  border-color: transparent;
+  border-style: solid;
+  border-width: 5px 0 5px 5px;
+  border-left-color: #cccccc;
+  margin-top: 5px;
+  margin-right: -10px;
+}
+.dropdown-submenu:hover>a:after {
+  border-left-color: #adb5bd;
+}
+.dropdown-submenu.pull-left {
+  float: none;
+}
+.dropdown-submenu.pull-left>.dropdown-menu {
+  left: -100%;
+  margin-left: 10px;
+  border-radius: 6px 0 6px 6px;
+}
+</style>
+
+<script type="text/javascript">
+// manage active state of menu based on current page
+$(document).ready(function () {
+  // active menu anchor
+  href = window.location.pathname
+  href = href.substr(href.lastIndexOf('/') + 1)
+  if (href === "")
+    href = "index.html";
+  var menuAnchor = $('a[href="' + href + '"]');
+
+  // mark it active
+  menuAnchor.tab('show');
+
+  // if it's got a parent navbar menu mark it active as well
+  menuAnchor.closest('li.dropdown').addClass('active');
+
+  // Navbar adjustments
+  var navHeight = $(".navbar").first().height() + 15;
+  var style = document.createElement('style');
+  var pt = "padding-top: " + navHeight + "px; ";
+  var mt = "margin-top: -" + navHeight + "px; ";
+  var css = "";
+  // offset scroll position for anchor links (for fixed navbar)
+  for (var i = 1; i <= 6; i++) {
+    css += ".section h" + i + "{ " + pt + mt + "}\n";
+  }
+  style.innerHTML = "body {" + pt + "padding-bottom: 40px; }\n" + css;
+  document.head.appendChild(style);
+});
+</script>
+
+<!-- tabsets -->
+
+<style type="text/css">
+.tabset-dropdown > .nav-tabs {
+  display: inline-table;
+  max-height: 500px;
+  min-height: 44px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs > li.active:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
+  content: "&#xe258;";
+  border: none;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs > li.active {
+  display: block;
+}
+
+.tabset-dropdown > .nav-tabs > li > a,
+.tabset-dropdown > .nav-tabs > li > a:focus,
+.tabset-dropdown > .nav-tabs > li > a:hover {
+  border: none;
+  display: inline-block;
+  border-radius: 4px;
+  background-color: transparent;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li {
+  display: block;
+  float: none;
+}
+
+.tabset-dropdown > .nav-tabs > li {
+  display: none;
+}
+</style>
+
+<!-- code folding -->
+
+
+
+
+</head>
+
+<body>
+
+
+<div class="container-fluid main-container">
+
+
+
+
+<div class="navbar navbar-default  navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html">Projects</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        <li>
+  <a href="index.html">Home</a>
+</li>
+<li>
+  <a href="Customer-Personality-Analysis-read.html">Customer Personality Data</a>
+</li>
+<li>
+  <a href="Open_Police_CA.html">Open Policing Data</a>
+</li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div><!--/.container -->
+</div><!--/.navbar -->
+
+<div id="header">
+
+
+
+<h1 class="title toc-ignore">Are Police Biased Against Black Persons</h1>
+
+</div>
+
+
+<div id="packages" class="section level2">
+<h2>Packages</h2>
+<pre class="r"><code>library(tidyverse)</code></pre>
+<pre><code>## -- Attaching packages --------------------------------------- tidyverse 1.3.1 --</code></pre>
+<pre><code>## v ggplot2 3.3.5     v purrr   0.3.4
+## v tibble  3.1.5     v dplyr   1.0.7
+## v tidyr   1.1.4     v stringr 1.4.0
+## v readr   2.0.2     v forcats 0.5.1</code></pre>
+<pre><code>## -- Conflicts ------------------------------------------ tidyverse_conflicts() --
+## x dplyr::filter() masks stats::filter()
+## x dplyr::lag()    masks stats::lag()</code></pre>
+<pre class="r"><code>library(RSQLite)
+library(dbplyr)</code></pre>
+<pre><code>## 
+## Attaching package: &#39;dbplyr&#39;</code></pre>
+<pre><code>## The following objects are masked from &#39;package:dplyr&#39;:
+## 
+##     ident, sql</code></pre>
+<pre class="r"><code>library(readr)
+library(DBI)
+library(devtools)</code></pre>
+<pre><code>## Loading required package: usethis</code></pre>
+<pre class="r"><code>library(inborutils) # for large files
+library(rio)
+library(knitr)
+library(broom)</code></pre>
+</div>
+<div id="reading-the-data" class="section level2">
+<h2>Reading the Data</h2>
+<pre class="r"><code># shouldn&#39;t need this after writing to SQLite db
+# Ideas for larger DB in csv: bigmatrix package
+# dat &lt;- readRDS(&quot;C:/Users/Chris/OneDrive/R project/Open Policing/yg821jf8611_ca_statewide_2020_04_01.rds&quot;)</code></pre>
+<p>This is my first time encountering a large dataset (3 million rows). After much stumbling in the dark and many articles I’ve linked the file to a SQLite database, made an object that is a subset of the file (20,000 rows) for initial analysis, then saved it as an RDS object that isn’t so big.</p>
+<pre class="r"><code># Ok SQLite does not have a storage class for dates or times, but it seems reasonably fast
+library(dplyr)
+#The code below should only need to be done once:
+
+
+#file_name &lt;- &quot;California_Policing&quot;
+# sqldb &lt;- dbConnect(SQLite(), dbname = file_name)
+# Writing
+# dbWriteTable(sqldb, name = &quot;Calfornia_Statewide_Policing&quot;, dat, row.names = FALSE, overwrite = TRUE, append = FALSE, field.types = NULL)
+
+# Reading, only need to do once. Taking the first 20,000 rows.
+#df &lt;- tbl(sqldb, &quot;Calfornia_Statewide_Policing&quot;) %&gt;% 
+#  select(-date, -raw_row_number) %&gt;% 
+#  filter(row_number() %in% c(1:20000)) %&gt;% 
+#  collect()
+# saving it as a RDS file for future use
+# saveRDS(df,&quot;C:/Users/Chris/OneDrive/R project/Open Policing/Open Policing/df.rds&quot;)
+# Ok this is our regular working object for now: 20,000 rows out of 3 million to work with 
+df &lt;- readRDS(&quot;C:/Users/Chris/OneDrive/R project/Open Policing/Open Policing/df.rds&quot;)
+# dbBegin(db) begins a transaction
+# dbRollback(db) roll back reverts to original state
+# dbCommit(db) &#39;commits&#39; the data</code></pre>
+<pre class="r"><code># Tidbit for future use
+#The code below is an example for if you need to copy data over into a database:
+#copy_to(con, nycflights13::flights, &quot;flights&quot;,
+#  temporary = FALSE, 
+#  indexes = list(
+#    c(&quot;year&quot;, &quot;month&quot;, &quot;day&quot;), 
+#    &quot;carrier&quot;, 
+#    &quot;tailnum&quot;,
+#    &quot;dest&quot;
+#  )
+#)</code></pre>
+<div id="exporatory-analysis" class="section level3">
+<h3>Exporatory Analysis</h3>
+<pre class="r"><code>library(DataExplorer)</code></pre>
+<p>Going to use glimpse on the data to get a look at the data. Glimpse reveals various location, vehicle, warning, and race information. Our variables are mostly categorical, with a lot of NA’s that I might want to replace with 0’s.</p>
+<pre class="r"><code>glimpse(df)</code></pre>
+<pre><code>## Rows: 20,000
+## Columns: 19
+## $ county_name      &lt;chr&gt; &quot;Stanislaus County&quot;, &quot;Stanislaus County&quot;, &quot;Stanislaus~
+## $ district         &lt;chr&gt; &quot;Modesto&quot;, &quot;Modesto&quot;, &quot;Modesto&quot;, &quot;Modesto&quot;, &quot;Modesto&quot;~
+## $ subject_race     &lt;chr&gt; &quot;other&quot;, &quot;hispanic&quot;, &quot;hispanic&quot;, &quot;white&quot;, &quot;hispanic&quot;,~
+## $ subject_sex      &lt;chr&gt; &quot;male&quot;, &quot;female&quot;, &quot;female&quot;, &quot;female&quot;, &quot;male&quot;, &quot;male&quot;,~
+## $ department_name  &lt;chr&gt; &quot;California Highway Patrol&quot;, &quot;California Highway Patr~
+## $ type             &lt;chr&gt; &quot;vehicular&quot;, &quot;vehicular&quot;, &quot;vehicular&quot;, &quot;vehicular&quot;, &quot;~
+## $ violation        &lt;chr&gt; &quot;Motorist / Public Service&quot;, &quot;Moving Violation (VC)&quot;,~
+## $ arrest_made      &lt;int&gt; NA, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, NA, ~
+## $ citation_issued  &lt;int&gt; NA, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, NA, ~
+## $ warning_issued   &lt;int&gt; NA, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, NA, ~
+## $ outcome          &lt;chr&gt; NA, &quot;summons&quot;, &quot;summons&quot;, &quot;summons&quot;, &quot;summons&quot;, &quot;summ~
+## $ contraband_found &lt;int&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+## $ frisk_performed  &lt;int&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+## $ search_conducted &lt;int&gt; 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,~
+## $ search_person    &lt;int&gt; 0, 0, NA, 0, NA, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ~
+## $ search_basis     &lt;chr&gt; NA, NA, &quot;other&quot;, NA, &quot;other&quot;, NA, NA, NA, NA, NA, NA,~
+## $ reason_for_stop  &lt;chr&gt; &quot;Motorist / Public Service&quot;, &quot;Moving Violation (VC)&quot;,~
+## $ raw_race         &lt;chr&gt; &quot;Other&quot;, &quot;Hispanic&quot;, &quot;Hispanic&quot;, &quot;White&quot;, &quot;Hispanic&quot;,~
+## $ raw_search_basis &lt;chr&gt; &quot;Vehicle Inventory&quot;, &quot;Probable Cause (positive)&quot;, &quot;Pr~</code></pre>
+<pre class="r"><code># This is unused but it&#39;s nice to know the way to find date range
+#dat %&gt;% 
+#  select(date) %&gt;% 
+#  summarise(date_range = max(date) - min(date))</code></pre>
+<pre class="r"><code>plot_str(df)</code></pre>
+<p>I’m not sure how nice this graph looks to be honest - will probably delete.</p>
+<pre class="r"><code>introduce(df)</code></pre>
+<pre><code>## # A tibble: 1 x 9
+##    rows columns discrete_columns continuous_columns all_missing_columns
+##   &lt;int&gt;   &lt;int&gt;            &lt;int&gt;              &lt;int&gt;               &lt;int&gt;
+## 1 20000      19               12                  7                   0
+## # ... with 4 more variables: total_missing_values &lt;int&gt;, complete_rows &lt;int&gt;,
+## #   total_observations &lt;int&gt;, memory_usage &lt;dbl&gt;</code></pre>
+<p>Introduce is very useful, it’s telling me that there are a lot of missing values. The memory usage is in byes which is 2.5MB. Perhaps I could select more than 20,000 rows.</p>
+<pre class="r"><code>plot_missing(df)</code></pre>
+<p><img src="Open_Police_CA_files/figure-html/unnamed-chunk-10-1.png" width="672" /> Whilst the NA’s in district, county_name and search_person seem to be genuine missing data, the other variables seem to be using NA as a geuine outcome. Let’s take a look at these columns:</p>
+<pre class="r"><code>df %&gt;% select(outcome, warning_issued, citation_issued, arrest_made, search_basis, contraband_found, frisk_performed) %&gt;% 
+  distinct()</code></pre>
+<pre><code>## # A tibble: 19 x 7
+##    outcome  warning_issued citation_issued arrest_made search_basis  
+##    &lt;chr&gt;             &lt;int&gt;           &lt;int&gt;       &lt;int&gt; &lt;chr&gt;         
+##  1 &lt;NA&gt;                 NA              NA          NA &lt;NA&gt;          
+##  2 summons               0               0           0 &lt;NA&gt;          
+##  3 summons               0               0           0 other         
+##  4 warning               1               0           0 &lt;NA&gt;          
+##  5 citation              0               1           0 &lt;NA&gt;          
+##  6 arrest                0               0           1 other         
+##  7 &lt;NA&gt;                 NA              NA          NA other         
+##  8 arrest                0               0           1 &lt;NA&gt;          
+##  9 &lt;NA&gt;                 NA              NA          NA other         
+## 10 summons               0               0           0 other         
+## 11 summons               0               0           0 probable cause
+## 12 citation              0               1           0 other         
+## 13 warning               1               0           0 other         
+## 14 summons               0               0           0 probable cause
+## 15 arrest                0               0           1 consent       
+## 16 arrest                0               0           1 probable cause
+## 17 warning               1               0           0 probable cause
+## 18 &lt;NA&gt;                 NA              NA          NA probable cause
+## 19 arrest                0               0           1 probable cause
+## # ... with 2 more variables: contraband_found &lt;int&gt;, frisk_performed &lt;int&gt;</code></pre>
+<p>The frisk_performed column has only NA’s and 1’s. We can treat the NA’s as 0 i.e no frisk performed. arrest_made, citation_issued, warning_issued, outcome tend to have NA’s together for a row. I believe it is a reasonable assumption that nothing occured during these pull overs. Therefore we can replace these NA’s with 0’s. The search_basis is giving us ‘other’ or NA, so we should probably remove this column. Search_person can also replace NA’s with 0’s.</p>
+<pre class="r"><code># Modifying all these NA entries:
+df &lt;- df %&gt;% 
+  replace_na(list(outcome = &quot;nothing&quot;, warning_issued = 0, arrest_made = 0, citation_issued = 0, warning_issued = 0, contraband_found = 0, frisk_performed = 0, search_conducted = 0 )) %&gt;% 
+  select(-search_basis)
+df &lt;- df %&gt;% replace_na(list(search_person = 0))</code></pre>
+<pre class="r"><code>plot_missing(df)</code></pre>
+<p><img src="Open_Police_CA_files/figure-html/unnamed-chunk-13-1.png" width="672" /> The district and county_name entries with NA entries can be treated as unusable data, we can remove them.</p>
+<pre class="r"><code>df &lt;- df %&gt;% 
+  na.omit()</code></pre>
+<pre class="r"><code>plot_missing(df)</code></pre>
+<p><img src="Open_Police_CA_files/figure-html/unnamed-chunk-15-1.png" width="672" /> And we’re done cleaning the NA!</p>
+</div>
+<div id="correlation-plot" class="section level3">
+<h3>Correlation plot</h3>
+<pre class="r"><code>library(plotly)</code></pre>
+<pre><code>## 
+## Attaching package: &#39;plotly&#39;</code></pre>
+<pre><code>## The following object is masked from &#39;package:rio&#39;:
+## 
+##     export</code></pre>
+<pre><code>## The following object is masked from &#39;package:ggplot2&#39;:
+## 
+##     last_plot</code></pre>
+<pre><code>## The following object is masked from &#39;package:stats&#39;:
+## 
+##     filter</code></pre>
+<pre><code>## The following object is masked from &#39;package:graphics&#39;:
+## 
+##     layout</code></pre>
+<pre class="r"><code>library(data.table)</code></pre>
+<pre><code>## 
+## Attaching package: &#39;data.table&#39;</code></pre>
+<pre><code>## The following objects are masked from &#39;package:dplyr&#39;:
+## 
+##     between, first, last</code></pre>
+<pre><code>## The following object is masked from &#39;package:purrr&#39;:
+## 
+##     transpose</code></pre>
+<p>We want the numeric data only for the correlation matrix, but first we need to turn some categorical variables into numeric:</p>
+<pre class="r"><code>Indtest &lt;- df %&gt;% 
+  group_by(subject_race,outcome) %&gt;% 
+  summarise(n = n()) %&gt;% 
+  spread(outcome, n)</code></pre>
+<pre><code>## `summarise()` has grouped output by &#39;subject_race&#39;. You can override using the `.groups` argument.</code></pre>
+<pre class="r"><code>Indtest</code></pre>
+<pre><code>## # A tibble: 5 x 6
+## # Groups:   subject_race [5]
+##   subject_race           arrest citation nothing summons warning
+##   &lt;chr&gt;                   &lt;int&gt;    &lt;int&gt;   &lt;int&gt;   &lt;int&gt;   &lt;int&gt;
+## 1 asian/pacific islander     12       15     394     676     150
+## 2 black                      34       25     481     868     223
+## 3 hispanic                  115      213    2084    3232     733
+## 4 other                       6       40     341     759     133
+## 5 white                     144      231    3125    4542    1362</code></pre>
+<pre class="r"><code>df %&gt;% 
+  group_by(subject_race,outcome) %&gt;%  summarise(n = n()) %&gt;%  mutate(chisq_pval = chisq.test(n)$p.value)</code></pre>
+<pre><code>## `summarise()` has grouped output by &#39;subject_race&#39;. You can override using the `.groups` argument.</code></pre>
+<pre><code>## # A tibble: 25 x 4
+## # Groups:   subject_race [5]
+##    subject_race           outcome      n chisq_pval
+##    &lt;chr&gt;                  &lt;chr&gt;    &lt;int&gt;      &lt;dbl&gt;
+##  1 asian/pacific islander arrest      12  4.41e-280
+##  2 asian/pacific islander citation    15  4.41e-280
+##  3 asian/pacific islander nothing    394  4.41e-280
+##  4 asian/pacific islander summons    676  4.41e-280
+##  5 asian/pacific islander warning    150  4.41e-280
+##  6 black                  arrest      34  0        
+##  7 black                  citation    25  0        
+##  8 black                  nothing    481  0        
+##  9 black                  summons    868  0        
+## 10 black                  warning    223  0        
+## # ... with 15 more rows</code></pre>
+<pre class="r"><code>df %&gt;% distinct(subject_race)</code></pre>
+<pre><code>## # A tibble: 5 x 1
+##   subject_race          
+##   &lt;chr&gt;                 
+## 1 other                 
+## 2 hispanic              
+## 3 white                 
+## 4 black                 
+## 5 asian/pacific islander</code></pre>
+<pre class="r"><code># In the order of: asian/islander, black, hispanic, other, white
+demo &lt;- c(0.1452+0.0036, 0.0551, 0.3929, 0.0368, 0.3664)
+# Numbers are taken from https://en.wikipedia.org/wiki/Demographics_of_California#/media/File:Ethic_California_Organized_Pie.png. The other category I obtained from 1 - sum(demo).</code></pre>
+</div>
+<div id="categorical-data-analysis" class="section level3">
+<h3>Categorical Data Analysis</h3>
+<div id="visualising-the-covariation-between-two-categorical-variables" class="section level4">
+<h4>Visualising the covariation between two categorical variables</h4>
+<pre class="r"><code>ggplot(data = df) +
+  geom_count(mapping = aes(x = subject_race, y = outcome, color = ..n.., size = ..n..)) +
+  scale_size_area() +
+  scale_size_continuous(range = c(1,10)) +
+  ggtitle(&quot;Covariation Between Outcome and Race&quot;) +
+  labs(x =&quot;Race of Subject&quot;, y = &quot;Outcome&quot;) +
+  guides(color = &quot;legend&quot;)</code></pre>
+<pre><code>## Scale for &#39;size&#39; is already present. Adding another scale for &#39;size&#39;, which
+## will replace the existing scale.</code></pre>
+<p><img src="Open_Police_CA_files/figure-html/unnamed-chunk-20-1.png" width="672" /> While this is not the most informative graph, it is interesting to note that quite few direct arrests. Most of the outcomes are summons or nothing. As one can expect, the circles are largest for the hispanic and white groups - the two groups with the largest samples. Let’s do a proportion graph:</p>
+<pre class="r"><code>ggplot(data = df) +
+  geom_count(mapping = aes(x = subject_race, y = outcome, color = ..prop.., size = ..prop.., group = 1)) +
+  scale_size_area() +
+  scale_size_continuous(range = c(1,10)) +
+  ggtitle(&quot;Covariation Between Outcome and Race&quot;) +
+  labs(x =&quot;Race of Subject&quot;, y = &quot;Outcome&quot;) +
+  guides(color = &quot;legend&quot;)</code></pre>
+<pre><code>## Scale for &#39;size&#39; is already present. Adding another scale for &#39;size&#39;, which
+## will replace the existing scale.</code></pre>
+<p><img src="Open_Police_CA_files/figure-html/unnamed-chunk-21-1.png" width="672" /> Show’s the same stuff, but it’s nice to know it’s easy to go between the two. We may also be interested in a heatmap version:</p>
+<pre class="r"><code>df %&gt;% 
+  count(subject_race, outcome) %&gt;% 
+ggplot(aes(x = subject_race, y = outcome)) +
+  geom_tile(aes(fill = n))</code></pre>
+<p><img src="Open_Police_CA_files/figure-html/unnamed-chunk-22-1.png" width="672" /></p>
+<pre class="r"><code>library(hrbrthemes)</code></pre>
+<pre><code>## Warning: package &#39;hrbrthemes&#39; was built under R version 4.1.2</code></pre>
+<pre><code>## NOTE: Either Arial Narrow or Roboto Condensed fonts are required to use these themes.</code></pre>
+<pre><code>##       Please use hrbrthemes::import_roboto_condensed() to install Roboto Condensed and</code></pre>
+<pre><code>##       if Arial Narrow is not on your system, please see https://bit.ly/arialnarrow</code></pre>
+<pre class="r"><code>library(seriation)</code></pre>
+<pre><code>## Warning: package &#39;seriation&#39; was built under R version 4.1.2</code></pre>
+<pre><code>## Registered S3 methods overwritten by &#39;registry&#39;:
+##   method               from 
+##   print.registry_field proxy
+##   print.registry_entry proxy</code></pre>
+<pre class="r"><code>nrow(unique(df %&gt;% count(subject_race,outcome)))</code></pre>
+<pre><code>## [1] 25</code></pre>
+<pre class="r"><code># 25
+colours &lt;- colorRampPalette(c(&quot;blue&quot;, &quot;green&quot;, &quot;red&quot;))(25)
+df %&gt;% 
+  count(subject_race, outcome) %&gt;% 
+ggplot(aes(x = subject_race, y = outcome)) +
+  geom_tile(aes(fill = n)) +
+  scale_fill_distiller(palette = &quot;RdPu&quot;) </code></pre>
+<p><img src="Open_Police_CA_files/figure-html/unnamed-chunk-23-1.png" width="672" /></p>
+<pre class="r"><code>#  theme_ipsum() moves axis labels to the side
+#  Other options
+#  scale_fill_gradient(low = &quot;White&quot;, high = &quot;blue&quot;)
+#
+ 
+#  scale_fill_brewer(palette = &quot;PRGn&quot;) # scale_fill_brewer requires factor for fill. Ok it&#39;s limited to 11 different facotrs this is better for something that is discrete</code></pre>
+<p>Same information is displayed but it’s definitely a more visually engaging method. The larger numbers of summons +hispanic/white really pop out. #### Test of single proportion</p>
+<pre class="r"><code>df %&gt;% 
+  group_by(subject_race) %&gt;% 
+  summarise(n = n()) %&gt;% 
+  mutate(rsum = sum(n))</code></pre>
+<pre><code>## # A tibble: 5 x 3
+##   subject_race               n  rsum
+##   &lt;chr&gt;                  &lt;int&gt; &lt;int&gt;
+## 1 asian/pacific islander  1247 19938
+## 2 black                   1631 19938
+## 3 hispanic                6377 19938
+## 4 other                   1279 19938
+## 5 white                   9404 19938</code></pre>
+<p>We can see that 1631 out of 19938 individuals pulled over were black. Wikipedia states that 5.51% of the population in CA is of black race. We can test the hypothesis that <em><span class="math inline">\(H_0:\)</span> The proportion of tested black race being 0.0551 is true </em><span class="math inline">\(H_1:\)</span> The proportion of tested black race being 0.0551 is not true</p>
+<pre class="r"><code>prop.test(1631, 19938, 0.0551, conf.level = 0.95)</code></pre>
+<pre><code>## 
+##  1-sample proportions test with continuity correction
+## 
+## data:  1631 out of 19938, null probability 0.0551
+## X-squared = 272.56, df = 1, p-value &lt; 2.2e-16
+## alternative hypothesis: true p is not equal to 0.0551
+## 95 percent confidence interval:
+##  0.07805494 0.08571442
+## sample estimates:
+##          p 
+## 0.08180359</code></pre>
+<p>The extremely low p-vale suggests we reject the null hypothesis. The estimated proportion is 0.081 with a 95% confidence interval (0.078, 0.085). This suggests that there is some bias towards selecting black drivers to be pulled over.</p>
+<pre class="r"><code># library(broom)
+df_chisq &lt;- df %&gt;% 
+  group_by(subject_race,outcome) %&gt;%  # the variables you want on the conteingency table
+  summarise(n = n()) %&gt;% # need the totals
+  mutate(proportion = n/sum(n)) %&gt;%
+  select(-proportion) %&gt;% # Oh you definitely need to get rid of proportion here so it spreads properly
+  spread(outcome, n) %&gt;%  # contingency table obtained! Also got proportions...and then got rid of them should make them separate
+  ungroup() %&gt;% # select will not remove in a grouped tibble
+  select(-1) %&gt;% 
+  chisq.test # %&gt;% </code></pre>
+<pre><code>## `summarise()` has grouped output by &#39;subject_race&#39;. You can override using the `.groups` argument.</code></pre>
+<pre class="r"><code>  glance()</code></pre>
+<pre><code>## # A tibble: 0 x 0</code></pre>
+<pre class="r"><code>df_chisq</code></pre>
+<pre><code>## 
+##  Pearson&#39;s Chi-squared test
+## 
+## data:  .
+## X-squared = 138.83, df = 16, p-value &lt; 2.2e-16</code></pre>
+<p>Testing of association between subject_race and outcome. The p-value is less than 0.05 so we reject the null hypothesis of no association and conclude that there is a association between the row variables (race) and column variables (outcome). Let’s have a look at the expected counts:</p>
+<pre class="r"><code>round(as_tibble(df_chisq$expected),0)</code></pre>
+<pre><code>## # A tibble: 5 x 5
+##   arrest citation nothing summons warning
+##    &lt;dbl&gt;    &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;
+## 1     19       33     402     630     163
+## 2     25       43     526     824     213
+## 3     99      168    2055    3223     832
+## 4     20       34     412     646     167
+## 5    147      247    3030    4753    1227</code></pre>
+<p>Compare it to the actual counts in data:</p>
+<pre class="r"><code>df %&gt;% 
+  group_by(subject_race,outcome) %&gt;%  # the variables you want on the conteingency table
+  summarise(n = n()) %&gt;% # need the totals
+  mutate(proportion = n/sum(n)) %&gt;%
+  select(-proportion) %&gt;% # Oh you definitely need to get rid of proportion here so it spreads properly
+  spread(outcome, n) %&gt;%  # contingency table obtained! Also got proportions...and then got rid of them should make them separate
+  ungroup()</code></pre>
+<pre><code>## `summarise()` has grouped output by &#39;subject_race&#39;. You can override using the `.groups` argument.</code></pre>
+<pre><code>## # A tibble: 5 x 6
+##   subject_race           arrest citation nothing summons warning
+##   &lt;chr&gt;                   &lt;int&gt;    &lt;int&gt;   &lt;int&gt;   &lt;int&gt;   &lt;int&gt;
+## 1 asian/pacific islander     12       15     394     676     150
+## 2 black                      34       25     481     868     223
+## 3 hispanic                  115      213    2084    3232     733
+## 4 other                       6       40     341     759     133
+## 5 white                     144      231    3125    4542    1362</code></pre>
+<p>And the most contributing cells to the total chi-square score:</p>
+<pre class="r"><code>subject_race &lt;- c(&quot;asian/pacific islander&quot;, &quot;black&quot;, &quot;hispanic&quot;, &quot;other&quot;, &quot;white&quot;)
+chisqres &lt;- as_tibble(df_chisq$residuals) %&gt;% add_column(subject_race, .before = 1)
+chisqres</code></pre>
+<pre><code>## # A tibble: 5 x 6
+##   subject_race           arrest citation nothing summons warning
+##   &lt;chr&gt;                   &lt;dbl&gt;    &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;
+## 1 asian/pacific islander -1.69     -3.10  -0.391   1.82   -0.994
+## 2 black                   1.70     -2.73  -1.94    1.52    0.701
+## 3 hispanic                1.56      3.51   0.640   0.158  -3.43 
+## 4 other                  -3.12      1.10  -3.50    4.43   -2.62 
+## 5 white                  -0.222    -1.03   1.72   -3.06    3.86</code></pre>
+<p>The cells with the highest absolute standardized residuals contribute the most to the total chi-square score. Let’s visualise this:</p>
+<pre class="r"><code>ggplot(data = melt(chisqres), aes(x = subject_race,y = variable )) +
+  geom_raster(aes(fill = value)) +
+  scale_fill_gradient(low = &quot;green&quot;, high = &quot;red&quot;)</code></pre>
+<pre><code>## Warning in melt(chisqres): The melt generic in data.table has been passed a
+## tbl_df and will attempt to redirect to the relevant reshape2 method; please note
+## that reshape2 is deprecated, and this redirection is now deprecated as well.
+## To continue using melt methods from reshape2 while both libraries are attached,
+## e.g. melt.list, you can prepend the namespace like reshape2::melt(chisqres). In
+## the next version, this warning will become an error.</code></pre>
+<pre><code>## Using subject_race as id variables</code></pre>
+<p><img src="Open_Police_CA_files/figure-html/unnamed-chunk-30-1.png" width="672" /> It can be seen that the column black is strongly associated with summons/arrest/warning but not strongly associated with nothing and citation.</p>
+</div>
+</div>
+<div id="classification-models" class="section level3">
+<h3>Classification models</h3>
+<pre class="r"><code>model_df &lt;- df %&gt;% 
+  filter(raw_search_basis == &quot;Probable Cause (positive)&quot; | raw_search_basis == &quot;Probable Cause (negative)&quot;) %&gt;% 
+  mutate(across(where(is_character), as_factor)) %&gt;% 
+  select(subject_race, subject_sex, outcome, raw_search_basis, search_conducted) 
+set.seed(42) 
+rows &lt;- sample(nrow(model_df)) # 11970 rows
+# We&#39;ll use the first 8000 randomised entries for the model
+train &lt;- model_df[1:8000, ]
+test &lt;- model_df[8001:11970, ]
+# And the rest for testing
+model &lt;- glm(raw_search_basis ~ subject_race, family = binomial(link = &quot;logit&quot;), data = train)
+summary(model)</code></pre>
+<pre><code>## 
+## Call:
+## glm(formula = raw_search_basis ~ subject_race, family = binomial(link = &quot;logit&quot;), 
+##     data = train)
+## 
+## Deviance Residuals: 
+##     Min       1Q   Median       3Q      Max  
+## -1.0043  -0.8476  -0.8438   1.4079   1.6338  
+## 
+## Coefficients:
+##                                    Estimate Std. Error z value Pr(&gt;|z|)    
+## (Intercept)                        -0.52712    0.04230 -12.463  &lt; 2e-16 ***
+## subject_racewhite                  -0.32245    0.05521  -5.841 5.20e-09 ***
+## subject_raceother                  -0.31169    0.10131  -3.077  0.00209 ** 
+## subject_raceblack                   0.10524    0.08752   1.202  0.22922    
+## subject_raceasian/pacific islander -0.50201    0.10590  -4.740 2.13e-06 ***
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## (Dispersion parameter for binomial family taken to be 1)
+## 
+##     Null deviance: 10115  on 7999  degrees of freedom
+## Residual deviance: 10054  on 7995  degrees of freedom
+## AIC: 10064
+## 
+## Number of Fisher Scoring iterations: 4</code></pre>
+<pre class="r"><code>## T-test: Population Demographic Compared with Police Testing 
+
+#We want to compare the proportion of black policing incidents to the population proportion.</code></pre>
+<p>We now have a model depicting the relationship between a search being positive or negative and the race of the person being pulled over. The p-values are interpreted as whether there is a difference between the log-odds of the outcome between the intercept and the explanatory variable. All of the predictors are significant using p &lt; 0.1 as the criteria but if we use p &lt; 0.05 which is more standard then the model would reject subject_raceblack as being useful in the model.</p>
+<p>Let’s quickly see how R is dummy coding the variables:</p>
+<pre class="r"><code>contrasts(model_df$raw_search_basis)</code></pre>
+<pre><code>##                           Probable Cause (negative)
+## Probable Cause (positive)                         0
+## Probable Cause (negative)                         1</code></pre>
+<p>Probable cause (positive) is coded as 0 while probable cause (negative) is coded as 1. We take exponential of the estimates for easier interpretation. Some of the notable interptations are:</p>
+<ul>
+<li>An intercept of -0.50813 implies there is a <span class="math inline">\(exp(-0.50813) = 0.60\)</span> probability that the pull-over for a hispanic is a false alarm</li>
+<li>subject_raceblack estimate of 0.13792 means being black increases the log odds by 0.13792. being black has <span class="math inline">\(exp(0.13792) = 1.148\)</span> odds of being a negative false alarm than hispanics (the reference or intercept category)</li>
+<li>All other groups have negative estimates and so they are more likely to be Probable Cause(positive) than hispanics
+<ul>
+<li>White has an estimate of -0.33708, and so <span class="math inline">\(exp(-0.33708) = 0.714\)</span> implies the average white has a <span class="math inline">\(0.6*0.714= 0.42\)</span> chance of being a Probable Cause (negative). Which means pullovers have more than a 50% chance of being correct</li>
+<li>Asian/Pacific Islander has an estimate of -0.49, and so <span class="math inline">\(exp(-0.49) = 0.61\)</span> implies the average asian/pacific islander has a <span class="math inline">\(0.6*0.61 = 0.366\)</span> chance of being a Probable Cause (negative). Which means pullovers have a 36% chance of being a Probable Cause (negative). I.e most of the pullovers due to suspicion were justified</li>
+</ul></li>
+</ul>
+<pre class="r"><code># Showing this in quick view
+exp(coef(model))</code></pre>
+<pre><code>##                        (Intercept)                  subject_racewhite 
+##                          0.5903054                          0.7243738 
+##                  subject_raceother                  subject_raceblack 
+##                          0.7322058                          1.1109739 
+## subject_raceasian/pacific islander 
+##                          0.6053139</code></pre>
+<pre class="r"><code>ggplot(model_df, aes(raw_search_basis, fill = subject_race)) +
+  geom_bar(position = &quot;fill&quot;)</code></pre>
+<p><img src="Open_Police_CA_files/figure-html/unnamed-chunk-34-1.png" width="672" /> This makes sense when we look at the plot above, proportionally most of the false alarms</p>
+<p>Now lets see the classification rate when we test the predictive ability of the model.</p>
+<pre class="r"><code>test1 &lt;- test %&gt;% select(1,4)
+probabilities &lt;-  predict(model, newdata = test1, type = &quot;response&quot;)
+predicted.class &lt;- ifelse(probabilities &gt; 0.5, &quot;Probable Cause (negative)&quot;, &quot;Probable Cause (positive)&quot;)</code></pre>
+<pre class="r"><code>model_dfp &lt;- df %&gt;% 
+  filter(raw_search_basis == &quot;Probable Cause (positive)&quot; &amp; subject_race != &quot;other&quot;) %&gt;% 
+  mutate(across(where(is_character), as_factor)) %&gt;% 
+  select(subject_race, subject_sex, outcome, raw_search_basis, search_conducted) 
+model_dfn &lt;- df %&gt;% 
+  filter(raw_search_basis == &quot;Probable Cause (negative)&quot; &amp; subject_race != &quot;other&quot;) %&gt;% 
+  mutate(across(where(is_character), as_factor)) %&gt;% 
+  select(subject_race, subject_sex, outcome, raw_search_basis, search_conducted) 
+set.seed(222)
+indexp &lt;- sample(seq_len(nrow(model_dfp)), size = 2000) 
+indexn &lt;- sample(seq_len(nrow(model_dfn)), size = 2000) 
+train2 &lt;- bind_rows(model_dfp[indexp,],model_dfn[indexn,])
+test2 &lt;- bind_rows(model_dfp[-indexp,],model_dfn[-indexn,])
+model2 &lt;- glm(raw_search_basis ~ subject_race, data = train2, family = binomial)
+prob &lt;- model2 %&gt;% predict(test2, type = &quot;response&quot;)
+predicted.class &lt;- ifelse(prob &gt; 0.5, &quot;Probable Cause (negative)&quot;, &quot;Probable Cause(positive)&quot;)
+# mean(predicted.class == test2$raw_search_basis)  something is going wrong here...and I can&#39;t figure it out my brain hurts
+table(predicted.class,test2$raw_search_basis) # But this seems ok</code></pre>
+<pre><code>##                            
+## predicted.class             Probable Cause (positive) Probable Cause (negative)
+##   Probable Cause (negative)                      2069                       817
+##   Probable Cause(positive)                       3353                       882</code></pre>
+<p>The table shows 3353 correct positive and 817 correct negative predictions. This means the model has <span class="math inline">\((3353+817)/(3353+817+882+2069) = 58.5%\)</span> chance of predicting correctly.</p>
+</div>
+</div>
+<div id="poisson-regression" class="section level2">
+<h2>Poisson Regression</h2>
+<p>We are interested in whether there is a bias against persons of black race when it comes to vehicle policing in the “California Statewide” category. One of the questions we can ask is: is the proportion of black persons cases different compared to those of other races?</p>
+<pre class="r"><code># Poisson regression
+# library(MASS)
+df %&gt;% 
+  group_by(subject_race,outcome) %&gt;%  
+  summarise(n = n())</code></pre>
+<pre><code>## `summarise()` has grouped output by &#39;subject_race&#39;. You can override using the `.groups` argument.</code></pre>
+<pre><code>## # A tibble: 25 x 3
+## # Groups:   subject_race [5]
+##    subject_race           outcome      n
+##    &lt;chr&gt;                  &lt;chr&gt;    &lt;int&gt;
+##  1 asian/pacific islander arrest      12
+##  2 asian/pacific islander citation    15
+##  3 asian/pacific islander nothing    394
+##  4 asian/pacific islander summons    676
+##  5 asian/pacific islander warning    150
+##  6 black                  arrest      34
+##  7 black                  citation    25
+##  8 black                  nothing    481
+##  9 black                  summons    868
+## 10 black                  warning    223
+## # ... with 15 more rows</code></pre>
+<pre class="r"><code>p&lt;- df %&gt;% 
+  group_by(subject_race,outcome) %&gt;%  
+  summarise(n = n()) </code></pre>
+<pre><code>## `summarise()` has grouped output by &#39;subject_race&#39;. You can override using the `.groups` argument.</code></pre>
+<pre class="r"><code>glm1 &lt;- glm(n ~ subject_race + outcome, data = p, family = &quot;poisson&quot;)
+summary(glm1)</code></pre>
+<pre><code>## 
+## Call:
+## glm(formula = n ~ subject_race + outcome, family = &quot;poisson&quot;, 
+##     data = p)
+## 
+## Deviance Residuals: 
+##     Min       1Q   Median       3Q      Max  
+## -3.6719  -2.7177  -0.2225   1.5190   4.3076  
+## 
+## Coefficients:
+##                      Estimate Std. Error z value Pr(&gt;|z|)    
+## (Intercept)           2.96791    0.06299  47.120  &lt; 2e-16 ***
+## subject_raceblack     0.26845    0.03762   7.136 9.58e-13 ***
+## subject_racehispanic  1.63196    0.03096  52.706  &lt; 2e-16 ***
+## subject_raceother     0.02534    0.03980   0.637    0.524    
+## subject_racewhite     2.02039    0.03014  67.039  &lt; 2e-16 ***
+## outcomecitation       0.52170    0.07158   7.288 3.14e-13 ***
+## outcomenothing        3.02816    0.05806  52.155  &lt; 2e-16 ***
+## outcomesummons        3.47822    0.05757  60.414  &lt; 2e-16 ***
+## outcomewarning        2.12386    0.06000  35.398  &lt; 2e-16 ***
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## (Dispersion parameter for poisson family taken to be 1)
+## 
+##     Null deviance: 32423.14  on 24  degrees of freedom
+## Residual deviance:   145.72  on 16  degrees of freedom
+## AIC: 346.9
+## 
+## Number of Fisher Scoring iterations: 4</code></pre>
+<pre class="r"><code># checking for overdispersion
+# library(AER)
+AER::dispersiontest(glm1, trafo = 1)</code></pre>
+<pre><code>## 
+##  Overdispersion test
+## 
+## data:  glm1
+## z = 4.1806, p-value = 1.454e-05
+## alternative hypothesis: true alpha is greater than 0
+## sample estimates:
+##    alpha 
+## 4.608596</code></pre>
+<pre class="r"><code># Based on: https://stats.stackexchange.com/questions/66586/is-there-a-test-to-determine-whether-glm-overdispersion-is-significant</code></pre>
+<p>We need to meet Poisson regression assumptions. Variable is a count: yes. The events must be independent - we can assume one person getting stopped does not make another person getting stopped more likely.</p>
+<p>After obtaining the model (glm1), the summary shows that a lot of variables are significant (excluding raceother which is acceptable). We then decide to calculate the p-value for the deviance goodness of fit test:</p>
+<pre class="r"><code>pchisq(glm1$deviance, df = glm1$df.residual, lower.tail = FALSE)</code></pre>
+<pre><code>## [1] 5.432394e-23</code></pre>
+<p>The null hypothesis is that glm1 is correctly specified, and this tiny p-value suggests that we reject the hypothesis. So this model fits badly.</p>
+<pre class="r"><code>Data_cor &lt;- df[ ,map_lgl(df, is.numeric)]
+
+# Data_cor is the dataset (not correlation matrix) you want to use
+corrdata &lt;- cor(na.omit(select_if(Data_cor, is.numeric)))
+corrdata[upper.tri(corrdata, diag = TRUE)] &lt;- NA
+corrdata &lt;- corrdata[-1, -ncol(corrdata)] # take out the first row (no 1-1 correlations)
+
+# Storing variable names for later use
+x_labels &lt;- colnames(corrdata)
+y_labels &lt;- rownames(corrdata)
+
+# Change variable names to numeric for the grid
+colnames(corrdata) &lt;- 1:ncol(corrdata)
+rownames(corrdata) &lt;- nrow(corrdata):1
+
+# Melt the data into  the desired format
+plotdata &lt;- melt(corrdata)</code></pre>
+<pre><code>## Warning in melt(corrdata): The melt generic in data.table has been passed a
+## matrix and will attempt to redirect to the relevant reshape2 method; please note
+## that reshape2 is deprecated, and this redirection is now deprecated as well.
+## To continue using melt methods from reshape2 while both libraries are attached,
+## e.g. melt.list, you can prepend the namespace like reshape2::melt(corrdata). In
+## the next version, this warning will become an error.</code></pre>
+<pre class="r"><code># Adding size variable and scaling it. $value is the correlation value
+plotdata$size &lt;- (abs(plotdata$value))
+scaling &lt;- 500/ncol(corrdata)/2
+plotdata$size &lt;- plotdata$size*scaling 
+
+# Setting x and y ranges for the chart
+# We used unit values for initial grid, so shift by 0.5 to create gridlines
+xrange &lt;- c(0.5, length(x_labels) + 0.5)
+yrange &lt;- c(0.5, length(y_labels) + 0.5)
+
+# Setting the gridlines
+x_grid &lt;- seq(1.5, length(x_labels) - 0.5, 1)
+y_grid &lt;- seq(1.5, length(x_labels) - 0.5, 1)
+
+# Now some cleanup. Naming variables and removing gridlines
+
+xAx1 &lt;- list(showgrid = FALSE, showline = FALSE, zeroline = FALSE, tickvals = colnames(corrdata), ticktext = x_labels, title = FALSE)
+
+xAx2 &lt;- list(showgrid = FALSE, showline = FALSE, zeroline = FALSE, overlaying = &quot;x&quot;, showticklabels = FALSE, range = xrange, tickvals = x_grid)
+
+yAx1 &lt;- list(autoaxis = FALSE, showgrid  = FALSE, showline = FALSE, zeroline = FALSE, tickvals = rownames(corrdata), ticktext = y_labels, title = FALSE)
+
+yAx2 &lt;- list(showgrid = TRUE, showline = FALSE, zeroline = FALSE, overlaying = &quot;y&quot;, showticklabels = FALSE, range = yrange, tickvals = y_grid)
+
+fig &lt;- plot_ly(data = plotdata, width = 500, height = 500)
+
+fig &lt;- fig %&gt;% add_trace(x = ~Var2, y = ~Var1, type = &quot;scatter&quot;, mode = &quot;markers&quot;,
+                        color = ~value,
+                        marker = list(size = ~size, opacity = 1),
+                        symbol = I(&quot;square&quot;),
+                        text = ~value,
+                        hovertemplate = &quot;%{text:.2f} &lt;extra&gt;&lt;/extra&gt;&quot;,
+                        xaxis = &quot;x1&quot;,
+                        yaxis = &quot;y1&quot;)
+
+fig &lt;- fig %&gt;% add_trace(x = ~Var2, y = ~Var1, type = &quot;scatter&quot;, mode = &quot;markers&quot;,
+                        opacity = 0,
+                        showlegend = FALSE,
+                        xaxis = &quot;x2&quot;,
+                        yaxis = &quot;y2&quot;,
+                        hoverinfo = &quot;none&quot;)
+
+fig &lt;- fig %&gt;% layout(xaxis = xAx1,
+                     yaxis = yAx1, 
+                     xaxis2 = xAx2,
+                     yaxis2 = yAx2,
+                     plot_bgcolor = &quot;rgba(0,0,0,0)&quot;,
+                     paper_bgcolor = &quot;rgba(0, 0, 0, 0.03)&quot;)
+
+fig &lt;- fig %&gt;% colorbar(title = &quot;&quot;, limits = c(-1,1), x = 1.1, y = 0.75)</code></pre>
+<pre class="r"><code>fig</code></pre>
+<div id="htmlwidget-1742d727001ab6dbd15b" style="width:500px;height:500px;" class="plotly html-widget"></div>
+<script type="application/json" data-for="htmlwidget-1742d727001ab6dbd15b">{"x":{"visdat":{"2190297b7f75":["function () ","plotlyVisDat"]},"cur_data":"2190297b7f75","attrs":{"2190297b7f75":{"alpha_stroke":1,"sizes":[10,100],"spans":[1,20],"x":{},"y":{},"type":"scatter","mode":"markers","color":{},"marker":{"size":{},"opacity":1},"symbol":["square"],"text":{},"hovertemplate":"%{text:.2f} <extra><\/extra>","xaxis":"x1","yaxis":"y1","inherit":true},"2190297b7f75.1":{"alpha_stroke":1,"sizes":[10,100],"spans":[1,20],"x":{},"y":{},"type":"scatter","mode":"markers","opacity":0,"showlegend":false,"xaxis":"x2","yaxis":"y2","hoverinfo":"none","inherit":true}},"layout":{"width":500,"height":500,"margin":{"b":40,"l":60,"t":25,"r":10},"xaxis":{"domain":[0,1],"automargin":true,"showgrid":false,"showline":false,"zeroline":false,"tickvals":["1","2","3","4","5","6"],"ticktext":["arrest_made","citation_issued","warning_issued","contraband_found","frisk_performed","search_conducted"],"title":false},"yaxis":{"domain":[0,1],"automargin":true,"autoaxis":false,"showgrid":false,"showline":false,"zeroline":false,"tickvals":["6","5","4","3","2","1"],"ticktext":["citation_issued","warning_issued","contraband_found","frisk_performed","search_conducted","search_person"],"title":false},"xaxis2":{"showgrid":false,"showline":false,"zeroline":false,"overlaying":"x","showticklabels":false,"range":[0.5,6.5],"tickvals":[1.5,2.5,3.5,4.5,5.5]},"yaxis2":{"showgrid":true,"showline":false,"zeroline":false,"overlaying":"y","showticklabels":false,"range":[0.5,6.5],"tickvals":[1.5,2.5,3.5,4.5,5.5]},"plot_bgcolor":"rgba(0,0,0,0)","paper_bgcolor":"rgba(0, 0, 0, 0.03)","hovermode":"closest","showlegend":false,"legend":{"yanchor":"top","y":0.5}},"source":"A","config":{"showSendToCloud":false},"data":[{"x":[1,1,1,1,1,1,2,2,2,2,2,2,3,3,3,3,3,3,4,4,4,4,4,4,5,5,5,5,5,5,6,6,6,6,6,6],"y":[6,5,4,3,2,1,6,5,4,3,2,1,6,5,4,3,2,1,6,5,4,3,2,1,6,5,4,3,2,1,6,5,4,3,2,1],"type":"scatter","mode":"markers","marker":{"colorbar":{"title":"value","ticklen":2},"cmin":-1,"cmax":1,"colorscale":[["0","rgba(68,1,84,1)"],["0.0416666666666667","rgba(70,19,97,1)"],["0.0833333333333333","rgba(72,32,111,1)"],["0.125","rgba(71,45,122,1)"],["0.166666666666667","rgba(68,58,128,1)"],["0.208333333333333","rgba(64,70,135,1)"],["0.25","rgba(60,82,138,1)"],["0.291666666666667","rgba(56,93,140,1)"],["0.333333333333333","rgba(49,104,142,1)"],["0.375","rgba(46,114,142,1)"],["0.416666666666667","rgba(42,123,142,1)"],["0.458333333333333","rgba(38,133,141,1)"],["0.5","rgba(37,144,140,1)"],["0.541666666666667","rgba(33,154,138,1)"],["0.583333333333333","rgba(39,164,133,1)"],["0.625","rgba(47,174,127,1)"],["0.666666666666667","rgba(53,183,121,1)"],["0.708333333333333","rgba(79,191,110,1)"],["0.75","rgba(98,199,98,1)"],["0.791666666666667","rgba(119,207,85,1)"],["0.833333333333333","rgba(147,214,70,1)"],["0.875","rgba(172,220,52,1)"],["0.916666666666667","rgba(199,225,42,1)"],["0.958333333333333","rgba(226,228,40,1)"],["1","rgba(253,231,37,1)"]],"showscale":false,"color":[-0.0206805156893809,-0.0487569392625005,0.134996555865107,-0.00408743556055305,0.553599181380462,-0.00408743556055305,null,-0.0636343089781746,-0.00479929033780936,-0.00533464859203452,-0.0245173726069553,-0.00533464859203452,null,null,-0.00621288930693566,-0.0125771108078397,-0.0577684831099114,-0.0125771108078397,null,null,null,-0.000948563869819434,0.181030764487461,-0.000948563869819434,null,null,null,null,0.201224648836057,1,null,null,null,null,null,0.201224648836057],"symbol":"square","size":[0.861688153724203,2.03153913593752,5.62485649437944,0.170309815023044,23.0666325575192,0.170309815023044,null,2.65142954075727,0.199970430742057,0.222277024668105,1.02155719195647,0.222277024668105,null,null,0.258870387788986,0.524046283659988,2.40702012957964,0.524046283659988,null,null,null,0.0395234945758097,7.54294852031089,0.0395234945758097,null,null,null,null,8.38436036816904,41.6666666666667,null,null,null,null,null,8.38436036816904],"opacity":1,"line":{"colorbar":{"title":"","ticklen":2},"cmin":-0.0636343089781746,"cmax":1,"colorscale":[["0","rgba(68,1,84,1)"],["0.0416666666666667","rgba(70,19,97,1)"],["0.0833333333333333","rgba(72,32,111,1)"],["0.125","rgba(71,45,122,1)"],["0.166666666666667","rgba(68,58,128,1)"],["0.208333333333333","rgba(64,70,135,1)"],["0.25","rgba(60,82,138,1)"],["0.291666666666667","rgba(56,93,140,1)"],["0.333333333333333","rgba(49,104,142,1)"],["0.375","rgba(46,114,142,1)"],["0.416666666666667","rgba(42,123,142,1)"],["0.458333333333333","rgba(38,133,141,1)"],["0.5","rgba(37,144,140,1)"],["0.541666666666667","rgba(33,154,138,1)"],["0.583333333333333","rgba(39,164,133,1)"],["0.625","rgba(47,174,127,1)"],["0.666666666666667","rgba(53,183,121,1)"],["0.708333333333333","rgba(79,191,110,1)"],["0.75","rgba(98,199,98,1)"],["0.791666666666667","rgba(119,207,85,1)"],["0.833333333333333","rgba(147,214,70,1)"],["0.875","rgba(172,220,52,1)"],["0.916666666666667","rgba(199,225,42,1)"],["0.958333333333333","rgba(226,228,40,1)"],["1","rgba(253,231,37,1)"]],"showscale":false,"color":[-0.0206805156893809,-0.0487569392625005,0.134996555865107,-0.00408743556055305,0.553599181380462,-0.00408743556055305,null,-0.0636343089781746,-0.00479929033780936,-0.00533464859203452,-0.0245173726069553,-0.00533464859203452,null,null,-0.00621288930693566,-0.0125771108078397,-0.0577684831099114,-0.0125771108078397,null,null,null,-0.000948563869819434,0.181030764487461,-0.000948563869819434,null,null,null,null,0.201224648836057,1,null,null,null,null,null,0.201224648836057]}},"text":[-0.0206805156893809,-0.0487569392625005,0.134996555865107,-0.00408743556055305,0.553599181380462,-0.00408743556055305,null,-0.0636343089781746,-0.00479929033780936,-0.00533464859203452,-0.0245173726069553,-0.00533464859203452,null,null,-0.00621288930693566,-0.0125771108078397,-0.0577684831099114,-0.0125771108078397,null,null,null,-0.000948563869819434,0.181030764487461,-0.000948563869819434,null,null,null,null,0.201224648836057,1,null,null,null,null,null,0.201224648836057],"hovertemplate":["%{text:.2f} <extra><\/extra>","%{text:.2f} <extra><\/extra>","%{text:.2f} <extra><\/extra>","%{text:.2f} <extra><\/extra>","%{text:.2f} <extra><\/extra>","%{text:.2f} <extra><\/extra>","%{text:.2f} <extra><\/extra>","%{text:.2f} <extra><\/extra>","%{text:.2f} <extra><\/extra>","%{text:.2f} <extra><\/extra>","%{text:.2f} <extra><\/extra>","%{text:.2f} <extra><\/extra>","%{text:.2f} <extra><\/extra>","%{text:.2f} <extra><\/extra>","%{text:.2f} <extra><\/extra>","%{text:.2f} <extra><\/extra>","%{text:.2f} <extra><\/extra>","%{text:.2f} <extra><\/extra>","%{text:.2f} <extra><\/extra>","%{text:.2f} <extra><\/extra>","%{text:.2f} <extra><\/extra>","%{text:.2f} <extra><\/extra>","%{text:.2f} <extra><\/extra>","%{text:.2f} <extra><\/extra>","%{text:.2f} <extra><\/extra>","%{text:.2f} <extra><\/extra>","%{text:.2f} <extra><\/extra>","%{text:.2f} <extra><\/extra>","%{text:.2f} <extra><\/extra>","%{text:.2f} <extra><\/extra>","%{text:.2f} <extra><\/extra>","%{text:.2f} <extra><\/extra>","%{text:.2f} <extra><\/extra>","%{text:.2f} <extra><\/extra>","%{text:.2f} <extra><\/extra>","%{text:.2f} <extra><\/extra>"],"xaxis":"x","yaxis":"y","frame":null},{"x":[1,1,1,1,1,1,2,2,2,2,2,2,3,3,3,3,3,3,4,4,4,4,4,4,5,5,5,5,5,5,6,6,6,6,6,6],"y":[6,5,4,3,2,1,6,5,4,3,2,1,6,5,4,3,2,1,6,5,4,3,2,1,6,5,4,3,2,1,6,5,4,3,2,1],"type":"scatter","mode":"markers","opacity":0,"showlegend":false,"xaxis":"x2","yaxis":"y2","hoverinfo":["none","none","none","none","none","none","none","none","none","none","none","none","none","none","none","none","none","none","none","none","none","none","none","none","none","none","none","none","none","none","none","none","none","none","none","none"],"marker":{"color":"rgba(255,127,14,1)","line":{"color":"rgba(255,127,14,1)"}},"error_y":{"color":"rgba(255,127,14,1)"},"error_x":{"color":"rgba(255,127,14,1)"},"line":{"color":"rgba(255,127,14,1)"},"frame":null},{"x":[1,6],"y":[1,6],"type":"scatter","mode":"markers","opacity":0,"hoverinfo":"none","showlegend":false,"marker":{"colorbar":{"title":"","ticklen":2,"len":0.5,"lenmode":"fraction","y":0.75,"yanchor":"top","x":1.1},"cmin":-1,"cmax":1,"colorscale":[["0","rgba(68,1,84,1)"],["0.0416666666666667","rgba(70,19,97,1)"],["0.0833333333333333","rgba(72,32,111,1)"],["0.125","rgba(71,45,122,1)"],["0.166666666666667","rgba(68,58,128,1)"],["0.208333333333333","rgba(64,70,135,1)"],["0.25","rgba(60,82,138,1)"],["0.291666666666667","rgba(56,93,140,1)"],["0.333333333333333","rgba(49,104,142,1)"],["0.375","rgba(46,114,142,1)"],["0.416666666666667","rgba(42,123,142,1)"],["0.458333333333333","rgba(38,133,141,1)"],["0.5","rgba(37,144,140,1)"],["0.541666666666667","rgba(33,154,138,1)"],["0.583333333333333","rgba(39,164,133,1)"],["0.625","rgba(47,174,127,1)"],["0.666666666666667","rgba(53,183,121,1)"],["0.708333333333333","rgba(79,191,110,1)"],["0.75","rgba(98,199,98,1)"],["0.791666666666667","rgba(119,207,85,1)"],["0.833333333333333","rgba(147,214,70,1)"],["0.875","rgba(172,220,52,1)"],["0.916666666666667","rgba(199,225,42,1)"],["0.958333333333333","rgba(226,228,40,1)"],["1","rgba(253,231,37,1)"]],"showscale":true,"color":[-0.0636343089781746,1],"line":{"color":"rgba(44,160,44,1)"}},"xaxis":"x","yaxis":"y","frame":null}],"highlight":{"on":"plotly_click","persistent":false,"dynamic":false,"selectize":false,"opacityDim":0.2,"selected":{"opacity":1},"debounce":0},"shinyEvents":["plotly_hover","plotly_click","plotly_selected","plotly_relayout","plotly_brushed","plotly_brushing","plotly_clickannotation","plotly_doubleclick","plotly_deselect","plotly_afterplot","plotly_sunburstclick"],"base_url":"https://plot.ly"},"evals":[],"jsHooks":[]}</script>
+</div>
+
+
+
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.odd').parent('tbody').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- tabsets -->
+
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open');
+  });
+});
+</script>
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
