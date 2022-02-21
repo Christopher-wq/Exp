@@ -1,5 +1,5 @@
 ---
-title: 'Exploratory Data Analysis on Customer Personality Dataset '
+title: 'Exploratory Data Analysis on Customer Personality Dataset'
 ---
 
 ## Packages
