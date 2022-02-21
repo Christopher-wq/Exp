@@ -1,0 +1,5 @@
+---
+title: "about"
+---
+
+A website for R and other shenanigans
