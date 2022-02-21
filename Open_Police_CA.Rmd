@@ -339,40 +339,10 @@ predicted.class <- ifelse(prob > 0.5, "Probable Cause (negative)", "Probable Cau
 # mean(predicted.class == test2$raw_search_basis)  something is going wrong here...and I can't figure it out my brain hurts
 table(predicted.class,test2$raw_search_basis) # But this seems ok
 ```
-The table shows 3353 correct positive and 817 correct negative predictions. This means the model has $(3353+817)/(3353+817+882+2069) = 58.5%$ chance of predicting correctly.
+The table shows 3353 correct positive and 817 correct negative predictions. This means the model has $(3353+817)/(3353+817+882+2069) = 58.5%$ chance of predicting correctly. So this model that uses a lot of the rarer data is actually decent at predicting whether someone is going to be falsely accused based on their race.
 
-
-## Poisson Regression
-
-We are interested in whether there is a bias against persons of black race when it comes to vehicle policing in the "California Statewide" category. One of the questions we can ask is: is the proportion of black persons cases different compared to those of other races?
-```{r}
-# Poisson regression
-# library(MASS)
-df %>% 
-  group_by(subject_race,outcome) %>%  
-  summarise(n = n())
-p<- df %>% 
-  group_by(subject_race,outcome) %>%  
-  summarise(n = n()) 
-
-
-glm1 <- glm(n ~ subject_race + outcome, data = p, family = "poisson")
-summary(glm1)
-# checking for overdispersion
-# library(AER)
-AER::dispersiontest(glm1, trafo = 1)
-# Based on: https://stats.stackexchange.com/questions/66586/is-there-a-test-to-determine-whether-glm-overdispersion-is-significant
-
-
-```
-We need to meet Poisson regression assumptions. Variable is a count: yes. The events must be independent - we can assume one person getting stopped does not make another person getting stopped more likely. 
-
-After obtaining the model (glm1), the summary shows that a lot of variables are significant (excluding raceother which is acceptable). We then decide to calculate the p-value for the deviance goodness of fit test:
-```{r}
-pchisq(glm1$deviance, df = glm1$df.residual, lower.tail = FALSE)
-```
-
-The null hypothesis is that glm1 is correctly specified, and this tiny p-value suggests that we reject the hypothesis. So this model fits badly.
+###
+This is a bad correlation graph that makes no sense that I need to either delete or edit
 
 ```{r}
 Data_cor <- df[ ,map_lgl(df, is.numeric)]
