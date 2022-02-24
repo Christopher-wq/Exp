@@ -15,6 +15,8 @@ library(inborutils) # for large files
 library(rio)
 library(knitr)
 library(broom)
+library(performance)
+library(data.table)
 ```
 ## Reading the Data
 ```{r}
@@ -268,6 +270,8 @@ It can be seen that the column black is strongly associated with summons/arrest/
 
 ### Classification models
 
+## Multicollinearity?
+
 ```{r}
 model_df <- df %>% 
   filter(raw_search_basis == "Probable Cause (positive)" | raw_search_basis == "Probable Cause (negative)") %>% 
@@ -276,18 +280,25 @@ model_df <- df %>%
 set.seed(42) 
 rows <- sample(nrow(model_df)) # 11970 rows
 # We'll use the first 8000 randomised entries for the model
-train <- model_df[1:8000, ]
-test <- model_df[8001:11970, ]
+train <- model_df[rows[1:8000], ]
+test <- model_df[-rows[1:8000], ]
 # And the rest for testing
 model <- glm(raw_search_basis ~ subject_race, family = binomial(link = "logit"), data = train)
 summary(model)
-
-
-## T-test: Population Demographic Compared with Police Testing 
-
-#We want to compare the proportion of black policing incidents to the population proportion.
 ```
 We now have a model depicting the relationship between a search being positive or negative and the race of the person being pulled over. The p-values are interpreted as whether there is a difference between the log-odds of the outcome between the intercept and the explanatory variable. All of the predictors are significant using p < 0.1 as the criteria but if we use p < 0.05 which is more standard then the model would reject subject_raceblack as being useful in the model.
+
+## Multicollinearity?
+
+```{r}
+check_collinearity(model) # jokes only 1 variable
+check_outliers(train) # 218 outliers
+```
+```{r}
+plot(model$residuals)
+```
+
+## Interpretation and Predictions
 
 Let's quickly see how R is dummy coding the variables:
 ```{r}
@@ -314,10 +325,12 @@ This makes sense when we look at the plot above, proportionally most of the fals
 
 Now lets see the classification rate when we test the predictive ability of the model.
 ```{r}
-test1 <- test %>% select(1,4)
-probabilities <-  predict(model, newdata = test1, type = "response")
+test <- test %>% select(1,4)
+probabilities <-  predict(model, newdata = test, type = "response")
 predicted.class <- ifelse(probabilities > 0.5, "Probable Cause (negative)", "Probable Cause (positive)")
+table(predicted.class, test$raw_search_basis)
 ```
+There is a problem with this model. It has terrible predictive power as it guesses positive by default.
 
 ```{r}
 model_dfp <- df %>% 
@@ -340,9 +353,18 @@ predicted.class <- ifelse(prob > 0.5, "Probable Cause (negative)", "Probable Cau
 table(predicted.class,test2$raw_search_basis) # But this seems ok
 ```
 The table shows 3353 correct positive and 817 correct negative predictions. This means the model has $(3353+817)/(3353+817+882+2069) = 58.5%$ chance of predicting correctly. So this model that uses a lot of the rarer data is actually decent at predicting whether someone is going to be falsely accused based on their race.
+```{r}
+summary(model2)
+```
+Using a higher number of points where the raw search basis was positive improved the model by large margin.
 
-###
-This is a bad correlation graph that makes no sense that I need to either delete or edit
+```{r}
+check_outliers(train2) # 111 outliers
+```
+
+Also worth noting is that the number of outliers has been reduced by using more positive data points. 
+
+This is a bad correlation graph that makes no sense that I need to either delete or edit:
 
 ```{r}
 Data_cor <- df[ ,map_lgl(df, is.numeric)]
