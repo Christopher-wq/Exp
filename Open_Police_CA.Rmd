@@ -4,19 +4,31 @@ title: "Are Police Biased Against Black Persons"
 
 
 ## Packages
-```{r}
-library(tidyverse)
-library(RSQLite)
-library(dbplyr)
-library(readr)
-library(DBI)
-library(devtools)
-library(inborutils) # for large files
-library(rio)
-library(knitr)
+```{r message=FALSE, warning=FALSE}
 library(broom)
+library(car) # box tidwell test
+library(caret)
+library(dbplyr)
+library(data.table)
+library(DataExplorer)
+library(DBI)
+library(DescTools) # for fit of logistic regression
+library(devtools)
+library(effects) # for log model plot
+library(fastDummies)
+library(hrbrthemes) # colour palets
+library(inborutils) # for large files
+library(kableExtra) # https://haozhu233.github.io/kableExtra/awesome_table_in_html.html
+library(knitr)
 library(performance)
 library(data.table)
+library(plotly)
+library(pROC) #roc curves
+library(readr)
+library(rio)
+library(RSQLite)
+library(seriation) # test library that I never used. Infrastructure for ordering objects with ordination techniques. Provides optimally reordered heatmaps
+library(tidyverse)
 ```
 ## Reading the Data
 ```{r}
@@ -70,9 +82,8 @@ df <- readRDS("C:/Users/Chris/OneDrive/R project/Open Policing/Open Policing/df.
 
 ### Exporatory Analysis
 
-```{r}
-library(DataExplorer)
-```
+DataExplorer package for intiial exploratory look.
+
 Going to use glimpse on the data to get a look at the data. Glimpse reveals various location, vehicle, warning, and race information. Our variables are mostly categorical, with a lot of NA's that I might want to replace with 0's.
 ```{r}
 glimpse(df)
@@ -130,33 +141,17 @@ plot_missing(df)
 ```
 And we're done cleaning the NA!
 
-### Correlation plot
-```{r}
-library(plotly)
-library(data.table)
-```
-We want the numeric data only for the correlation matrix, but first we need to turn some categorical variables into numeric:
 
-```{r}
-Indtest <- df %>% 
-  group_by(subject_race,outcome) %>% 
-  summarise(n = n()) %>% 
-  spread(outcome, n)
-Indtest
-```
-```{r}
-df %>% 
-  group_by(subject_race,outcome) %>%  summarise(n = n()) %>%  mutate(chisq_pval = chisq.test(n)$p.value)
-```
+
+### Categorical Data Analysis
+
+Needed some population data to compare our data to. These demographic statistics are from wikipedia.
 ```{r}
 df %>% distinct(subject_race)
 # In the order of: asian/islander, black, hispanic, other, white
 demo <- c(0.1452+0.0036, 0.0551, 0.3929, 0.0368, 0.3664)
 # Numbers are taken from https://en.wikipedia.org/wiki/Demographics_of_California#/media/File:Ethic_California_Organized_Pie.png. The other category I obtained from 1 - sum(demo).
 ```
-
-### Categorical Data Analysis
-
 #### Visualising the covariation between two categorical variables
 
 ```{r}
@@ -188,8 +183,7 @@ ggplot(aes(x = subject_race, y = outcome)) +
   geom_tile(aes(fill = n))
 ```
 ```{r}
-library(hrbrthemes)
-library(seriation)
+
 nrow(unique(df %>% count(subject_race,outcome)))
 # 25
 colours <- colorRampPalette(c("blue", "green", "red"))(25)
@@ -234,23 +228,62 @@ df_chisq <- df %>%
   ungroup() %>% # select will not remove in a grouped tibble
   select(-1) %>% 
   chisq.test # %>% 
-  glance()
+  glance() # can't decide if I want it glanced...not this time
 df_chisq
 ```
 Testing of association between subject_race and outcome. The p-value is less than 0.05 so we reject the null hypothesis of no association and conclude that there is a association between the row variables (race) and column variables (outcome).
 Let's have a look at the expected counts:
 ```{r}
-round(as_tibble(df_chisq$expected),0)
+t1 <- round(as_tibble(df_chisq$expected),0)
+t1
 ```
 Compare it to the actual counts in data:
 ```{r}
-df %>% 
+t2 <- df %>% 
   group_by(subject_race,outcome) %>%  # the variables you want on the conteingency table
   summarise(n = n()) %>% # need the totals
   mutate(proportion = n/sum(n)) %>%
   select(-proportion) %>% # Oh you definitely need to get rid of proportion here so it spreads properly
   spread(outcome, n) %>%  # contingency table obtained! Also got proportions...and then got rid of them should make them separate
-  ungroup()
+  ungroup() %>% 
+  select(-1)
+```
+Let's compare them side by side:
+```{r}
+t0 <- df %>% 
+  group_by(subject_race,outcome) %>%  # the variables you want on the conteingency table
+  summarise(n = n()) %>% # need the totals
+  mutate(proportion = n/sum(n)) %>%
+  select(-proportion) %>% # Oh you definitely need to get rid of proportion here so it spreads properly
+  spread(outcome, n) %>%  # contingency table obtained! Also got proportions...and then got rid of them should make them separate
+  ungroup() %>% 
+  select(1)
+t1a <- tibble(t0,t1)
+t2a <- tibble(t0, t2)
+kables(list(
+            kable(caption = "Expected counts", t1a) %>% 
+              kable_classic() %>% 
+                column_spec(3, color = spec_color(t1$arrest)),
+            kable(caption = "Actual counts", t2a) %>% 
+              kable_classic() %>% 
+                column_spec(3, color = spec_color(t2$arrest)))
+       ) %>% kable_classic()
+# wow this is cool. Hope it knits well
+# kable classic makes it nice, but kable_styling() makes it unreadable for my dark-mode/markdown setup
+# Other options: kable_paper, kable_classic_2, kable_material, kable_material_dark
+# this is not bad 
+```
+At a glance we can see that some of the biggest differences occur for hispanic & warning, and black & citation. The 'other' group is defined a bit differently between the dataset and wikipedia so we shouldn't draw too much from it.
+```{r}
+# Cool kable concept that I want to explore later - but not now
+#t1
+#t1dt <- lapply(t1[1:ncol(t1),2:nrow(t1)], function(x) {
+#  cell_spec(x, bold = T,
+#            color = spec_color(x, end = 0.9), #generates viridus color
+#            font_size = spec_font_size(x, begin = 10, end = 16))
+#})
+#kbl(t1dt, escape = F, align = "c") %>% 
+#  kable_classic("striped", full_width = F)
 ```
 
 
@@ -288,14 +321,125 @@ summary(model)
 ```
 We now have a model depicting the relationship between a search being positive or negative and the race of the person being pulled over. The p-values are interpreted as whether there is a difference between the log-odds of the outcome between the intercept and the explanatory variable. All of the predictors are significant using p < 0.1 as the criteria but if we use p < 0.05 which is more standard then the model would reject subject_raceblack as being useful in the model.
 
-## Multicollinearity?
+```{r}
+calc_class_err = function(actual, predicted){
+  mean(actual != predicted)
+}
+probabilities <-  predict(model, newdata = test, type = "response")
+predicted.class <- ifelse(probabilities > 0.5, "Probable Cause (negative)", "Probable Cause (positive)")
+test_table <-  table(predicted.class, test$raw_search_basis)
+test_table #<- rbind(test_table, c(0,0))
+# for prediction this model needs some adjustments
+#rownames(test_table) <-  c("Probable Cause (positive)",("Probable Cause (negative)"))
+test_table
+#alc_class_err(actual = test$raw_search_basis, predicted = predicted.class)
+# this doesn't tell the whole story.
+```
+There is cause for concern in the table as the predicted class is only showing "Probable Cause (positive)" predictions. Lets obtain more metrics.
+
 
 ```{r}
-check_collinearity(model) # jokes only 1 variable
-check_outliers(train) # 218 outliers
+test1 <- test %>% mutate(raw_search_basis = ifelse(raw_search_basis == "Probable Cause (negative)", 1, 0))
+cutoffs <- seq(0, 1, by = 0.05)
+eff <- sapply(cutoffs, function(cutoff){
+  sum((probabilities > cutoff) == test1$raw_search_basis)/length(probabilities)
+})
+eff
 ```
 ```{r}
-plot(model$residuals)
+# Produce a ROC curve based on the current model.
+test_roc = roc(test$raw_search_basis ~ probabilities, plot = TRUE, print.auc = TRUE)
+# 0.554 isn't very good. But we should use it to choose optimal threshold
+```
+
+```{r}
+# extract the co-ordinates
+mycoords <- coords(test_roc, "all")
+best.coords <- coords(test_roc, "best", best.method = "youden")
+best.coords
+```
+Sensitivity is defined as the True Positive rate (sensitivity = $\frac{TP}{TP + FN}$). This is decently high for this model. Specificity is defined as the True Negate rate (specificity = $\frac{TN}{TN + FP}$}). We use 1 - Specificity to define the False Positive Rate.  Lowering the classification threshold classifies more items as 'positive', increasing more false positives and true positives. Our optimal cutoff here using the "youden" method is 0.339, this will improve the classification power of the model.
+
+```{r}
+probabilities <-  predict(model, newdata = test, type = "response")
+predicted.class <- ifelse(probabilities > 0.339, "Probable Cause (negative)", "Probable Cause (positive)")
+test_table <-  table(predicted.class, test$raw_search_basis)
+test_table
+```
+Classification rate is $(1735+589)/(1735+589+932+714) = 0.585$, which is a lot better than 0.3 from earlier. The true positive rate is $1735/1735+932 = 0.65$ which is the same as the sensitivity rate stated. The true negative rate is $589/(589 + 714 = 0.45$ which is the specificity rate.
+
+## Model fit
+
+(Move ROC stuff here).
+
+There are two very different approaches to answer this question. One is to get statistics on how well you can predict the dependent variable based on the independent variables (measures of predictive power). Examples would be R-square, the area under the ROC curve, and several rank-order correlations. Higher is better but there is rarely a fixed cut-off that distinguishes an acceptable model from one that is not acceptable.
+
+The other approach is to compute a goodness-of-fit statistic. These test whether you can do better by making the model more complicated, specifically, adding non-linearities, adding interactions or chainging the link function. There are the deviance, Pearson chi-square or Hosmer-Lemeshow test. These are tests of the null hypothesis that the fitted model is correct, and their output is a p-value, with a higher value indicating a better fit. A p-value below some specified $\alpha$ level would suggest that the model is not acceptable.
+
+Important to note is that measures of predictive power and goodness-of-fit statistics are testing different things. As such a model with very high R-squared for example might have terrible goodness-of-fit statistics. 
+
+A bit more on goodness-of-fit (GOF) tests: they test whether there are any non-linearities or interactions. One can always produce a good fit by adding enough interactions and nonlinearities. The question is if you really need them to properly represent the data. GOF tests are designed to answer that question.
+
+Small summary of GOF tests:
+
+-  Deviance: different of likelihoods between fitted and saturated model (saturated model likelihood is 1). Is always $\geq 0$, and is $0$ if the fit is perfect.
+- & Pearson chi-square 
+- Hosmer and Lemeshow: groups cases together according to predicted values from the logistic regression model. Predicted values are sorted from highest to lowest, and then separated into several groups of approximately equal size.  The number of observed events and non-events are calculated, as well as the expected number of events and non-events. This would be the sum of the predicted probabilities and the expected number of non-events would be the group size minus the expected number of events. Pearson's chi-square is applied to compare observed counts with expected counts. Degrees of freedom is the number of groups minus 2. Has drawbacks - changing the number of groups can heavily influence the outcome, and adding statistically significant interaction or non-linearity to a model can sometimes increase the HL and reduce the p-value. This suggest we're better off without this statistically significant interaction term. The reverse can also happen (adding a non-significant interaction will improve the HL fit).
+
+Lets look at our measures of predictiveness:
+
+
+```{r}
+PseudoR2(model, which = c("McFadden", "CoxSnell","Tjur"))
+```
+All of these suggest that the predictive power is poor - which is definitely something we can agree on. The purpose of the model is to see the interaction rather than the predictive power anyway.
+
+Now let's take a look at the goodness of fit measures.
+```{r}
+# To see if the deviance matters we take the full model and compare to the current one:
+model1 <- glm(raw_search_basis ~., family = binomial,data = train)
+summary(model1)
+```
+```{r}
+anova(model, model1)
+```
+```{r}
+model2 <- glm(raw_search_basis ~ subject_race + outcome, family = "binomial", data = train)
+anova(model, model1, model2)
+```
+For a better model that fits the data, we would add "outcome" to the variables. The deviance is also almost as good as the saturated model. However this is not the purpose of the exercise so I will just leave it as an aside.
+
+Let's plot our model:
+```{r}
+plot(allEffects(model)) # from effects package. typical = median is an alternative option
+```
+On the left hand side we have predicted probabilities for being a probable cause (negative). It also includes 95% confidence interval bars. There is a clear effect of black and hispanics being those more likely to be false alarms.
+
+
+## Assumption check
+
+- outcome is binary/dichotomous
+- linear relationship between logic of the outcome and each predictor variable
+- no influencial values
+- no multicollinearity
+```{r}
+check_collinearity(model) # jokes only 1 variable
+out_list <- check_outliers(train) # 218 outliers
+dfbetas_model <- as_tibble(dfbetas(model)[out_list == TRUE, ])
+dfbetas_model %>% 
+  ggplot(aes(y = .[[1]], x = seq_along(dfbetas_model$`(Intercept)`))) +
+  geom_point() 
+dfbetas_model %>% 
+  ggplot(aes(y = .[[2]], x = seq_along(subject_raceblack))) +
+  geom_point() 
+dfbetas_model %>% 
+  ggplot(aes(y = .[[3]], x = seq_along(subject_raceblack))) +
+  geom_point() 
+```
+The only thing we can comment on here is that we can't remove these outliers - they are an essential part of the data.
+
+```{r}
+plot(model$fitted.values)
 ```
 
 ## Interpretation and Predictions
@@ -306,7 +450,11 @@ contrasts(model_df$raw_search_basis)
 ```
 Probable cause (positive) is coded as 0 while probable cause (negative) is coded as 1. We take exponential of the estimates for easier interpretation. Some of the notable interptations are:
 
-* An intercept of  -0.50813  implies there is a $exp(-0.50813) = 0.60$ probability that the pull-over for a hispanic is a false alarm
+```{r}
+model
+```
+
+* An intercept of  -0.51  implies there is a $exp(-0.51) = 0.60$ probability that the pull-over for a hispanic is a false alarm
 * subject_raceblack estimate of 0.13792 means being black increases the log odds by 0.13792.   being black has $exp(0.13792) = 1.148$ odds of being a negative false alarm than hispanics (the reference or intercept category)
 * All other groups have negative estimates and so they are more likely to be Probable Cause(positive) than hispanics
   - White has an estimate of  -0.33708, and so $exp(-0.33708) = 0.714$ implies the average white has a $0.6*0.714= 0.42$ chance of being a Probable Cause (negative). Which means pullovers have more than a 50% chance of being correct
@@ -325,117 +473,12 @@ This makes sense when we look at the plot above, proportionally most of the fals
 
 Now lets see the classification rate when we test the predictive ability of the model.
 ```{r}
-test <- test %>% select(1,4)
 probabilities <-  predict(model, newdata = test, type = "response")
-predicted.class <- ifelse(probabilities > 0.5, "Probable Cause (negative)", "Probable Cause (positive)")
+predicted.class <- ifelse(probabilities > 0.327, "Probable Cause (negative)", "Probable Cause (positive)")
 table(predicted.class, test$raw_search_basis)
 ```
-There is a problem with this model. It has terrible predictive power as it guesses positive by default.
+There is a problem with this model. If we change 0.32 to be the threshhold (based on ROC optimisation), then we get a 59% classification success rate. We shouldn't use this model for predicting anyway.
 
-```{r}
-model_dfp <- df %>% 
-  filter(raw_search_basis == "Probable Cause (positive)" & subject_race != "other") %>% 
-  mutate(across(where(is_character), as_factor)) %>% 
-  select(subject_race, subject_sex, outcome, raw_search_basis, search_conducted) 
-model_dfn <- df %>% 
-  filter(raw_search_basis == "Probable Cause (negative)" & subject_race != "other") %>% 
-  mutate(across(where(is_character), as_factor)) %>% 
-  select(subject_race, subject_sex, outcome, raw_search_basis, search_conducted) 
-set.seed(222)
-indexp <- sample(seq_len(nrow(model_dfp)), size = 2000) 
-indexn <- sample(seq_len(nrow(model_dfn)), size = 2000) 
-train2 <- bind_rows(model_dfp[indexp,],model_dfn[indexn,])
-test2 <- bind_rows(model_dfp[-indexp,],model_dfn[-indexn,])
-model2 <- glm(raw_search_basis ~ subject_race, data = train2, family = binomial)
-prob <- model2 %>% predict(test2, type = "response")
-predicted.class <- ifelse(prob > 0.5, "Probable Cause (negative)", "Probable Cause(positive)")
-# mean(predicted.class == test2$raw_search_basis)  something is going wrong here...and I can't figure it out my brain hurts
-table(predicted.class,test2$raw_search_basis) # But this seems ok
-```
-The table shows 3353 correct positive and 817 correct negative predictions. This means the model has $(3353+817)/(3353+817+882+2069) = 58.5%$ chance of predicting correctly. So this model that uses a lot of the rarer data is actually decent at predicting whether someone is going to be falsely accused based on their race.
-```{r}
-summary(model2)
-```
-Using a higher number of points where the raw search basis was positive improved the model by large margin.
+### Conclusion
+There is bias against black persons. In terms of model there isn't anything nice from logistic regression for prediction. Perhaps I should try classification trees, neural networks or support vector machines next.
 
-```{r}
-check_outliers(train2) # 111 outliers
-```
-
-Also worth noting is that the number of outliers has been reduced by using more positive data points. 
-
-This is a bad correlation graph that makes no sense that I need to either delete or edit:
-
-```{r}
-Data_cor <- df[ ,map_lgl(df, is.numeric)]
-
-# Data_cor is the dataset (not correlation matrix) you want to use
-corrdata <- cor(na.omit(select_if(Data_cor, is.numeric)))
-corrdata[upper.tri(corrdata, diag = TRUE)] <- NA
-corrdata <- corrdata[-1, -ncol(corrdata)] # take out the first row (no 1-1 correlations)
-
-# Storing variable names for later use
-x_labels <- colnames(corrdata)
-y_labels <- rownames(corrdata)
-
-# Change variable names to numeric for the grid
-colnames(corrdata) <- 1:ncol(corrdata)
-rownames(corrdata) <- nrow(corrdata):1
-
-# Melt the data into  the desired format
-plotdata <- melt(corrdata)
-
-# Adding size variable and scaling it. $value is the correlation value
-plotdata$size <- (abs(plotdata$value))
-scaling <- 500/ncol(corrdata)/2
-plotdata$size <- plotdata$size*scaling 
-
-# Setting x and y ranges for the chart
-# We used unit values for initial grid, so shift by 0.5 to create gridlines
-xrange <- c(0.5, length(x_labels) + 0.5)
-yrange <- c(0.5, length(y_labels) + 0.5)
-
-# Setting the gridlines
-x_grid <- seq(1.5, length(x_labels) - 0.5, 1)
-y_grid <- seq(1.5, length(x_labels) - 0.5, 1)
-
-# Now some cleanup. Naming variables and removing gridlines
-
-xAx1 <- list(showgrid = FALSE, showline = FALSE, zeroline = FALSE, tickvals = colnames(corrdata), ticktext = x_labels, title = FALSE)
-
-xAx2 <- list(showgrid = FALSE, showline = FALSE, zeroline = FALSE, overlaying = "x", showticklabels = FALSE, range = xrange, tickvals = x_grid)
-
-yAx1 <- list(autoaxis = FALSE, showgrid  = FALSE, showline = FALSE, zeroline = FALSE, tickvals = rownames(corrdata), ticktext = y_labels, title = FALSE)
-
-yAx2 <- list(showgrid = TRUE, showline = FALSE, zeroline = FALSE, overlaying = "y", showticklabels = FALSE, range = yrange, tickvals = y_grid)
-
-fig <- plot_ly(data = plotdata, width = 500, height = 500)
-
-fig <- fig %>% add_trace(x = ~Var2, y = ~Var1, type = "scatter", mode = "markers",
-                        color = ~value,
-                        marker = list(size = ~size, opacity = 1),
-                        symbol = I("square"),
-                        text = ~value,
-                        hovertemplate = "%{text:.2f} <extra></extra>",
-                        xaxis = "x1",
-                        yaxis = "y1")
-
-fig <- fig %>% add_trace(x = ~Var2, y = ~Var1, type = "scatter", mode = "markers",
-                        opacity = 0,
-                        showlegend = FALSE,
-                        xaxis = "x2",
-                        yaxis = "y2",
-                        hoverinfo = "none")
-
-fig <- fig %>% layout(xaxis = xAx1,
-                     yaxis = yAx1, 
-                     xaxis2 = xAx2,
-                     yaxis2 = yAx2,
-                     plot_bgcolor = "rgba(0,0,0,0)",
-                     paper_bgcolor = "rgba(0, 0, 0, 0.03)")
-
-fig <- fig %>% colorbar(title = "", limits = c(-1,1), x = 1.1, y = 0.75)
-```
-```{r}
-fig
-```
